@@ -25,6 +25,16 @@ const PIE_COLORS = {
     Cash: '#9ca3af', Other: '#94a3b8',
 };
 
+// ── Top-level sections ───────────────────────────────────
+function switchSection(section) {
+    document.querySelectorAll('.top-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.section === section);
+    });
+    document.querySelectorAll('.section-content').forEach(el => {
+        el.classList.toggle('active', el.id === `section-${section}`);
+    });
+}
+
 // ── Tabs ─────────────────────────────────────────────────
 function switchTab(tab) {
     activeTab = tab;

@@ -445,6 +445,7 @@ def get_live_breakdown():
             quantity=h.quantity,
             price=live_price if live_price else h.price,
             value=round(h.quantity * live_price, 2) if live_price and h.quantity else h.value,
+            cost_basis=h.cost_basis,
             brokerage=h.brokerage,
             account=h.account,
         )
@@ -488,6 +489,7 @@ def get_live_rebalance():
             quantity=h.quantity,
             price=live_price if live_price else h.price,
             value=round(h.quantity * live_price, 2) if live_price and h.quantity else h.value,
+            cost_basis=h.cost_basis,
             brokerage=h.brokerage,
             account=h.account,
         )

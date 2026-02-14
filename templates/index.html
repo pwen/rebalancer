@@ -5,228 +5,249 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Portfolio Rebalancer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
-    <header>
-        <h1>⚖️ Portfolio Rebalancer</h1>
-        <p class="subtitle">Upload holdings, see your breakdown, rebalance to targets.</p>
-    </header>
-
     <main>
-        <!-- ── Tab Navigation ──────────────────────────────────── -->
-        <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="holdings" onclick="switchTab('holdings')">All Holdings</button>
-            <button class="tab-btn" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
-            <button class="tab-btn" data-tab="targets" onclick="switchTab('targets')">Targets & Rebalance</button>
-            <button class="tab-btn" data-tab="trends" onclick="switchTab('trends')">Trends</button>
-            <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload & Snapshots</button>
-            <div class="tab-nav-spacer"></div>
-            <div class="snapshot-selector">
-                <label>📅</label>
-                <select id="snapshot-select" onchange="onSnapshotChange()">
-                    <option value="">Latest</option>
-                </select>
-            </div>
+        <!-- ── Top-level Section Toggle ───────────────────────── -->
+        <nav class="top-nav">
+            <button class="top-nav-btn active" data-section="personal"
+                onclick="switchSection('personal')">Personal</button>
+            <button class="top-nav-btn" data-section="world" onclick="switchSection('world')">The World</button>
         </nav>
 
-        <!-- ── Tab 1: All Holdings ─────────────────────────────── -->
-        <div class="tab-panel active" id="tab-holdings">
-            <section class="card" id="holdings-section">
-                <div class="section-header">
-                    <h2>All Holdings (<span id="holdings-count">0</span>)</h2>
-                    <div class="header-controls">
-                        <label class="live-toggle" title="Use live market prices instead of snapshot prices">
-                            <input type="checkbox" id="live-toggle" onchange="toggleLiveView()" />
-                            <span class="toggle-label">📡 Live</span>
-                        </label>
-                        <span id="total-value" class="total-value"></span>
-                    </div>
+        <!-- ── Personal Section ───────────────────────────────── -->
+        <div id="section-personal" class="section-content active">
+
+            <!-- ── Tab Navigation ──────────────────────────────────── -->
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="holdings" onclick="switchTab('holdings')">All Holdings</button>
+                <button class="tab-btn" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
+                <button class="tab-btn" data-tab="targets" onclick="switchTab('targets')">Targets & Rebalance</button>
+                <button class="tab-btn" data-tab="trends" onclick="switchTab('trends')">Trends</button>
+                <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload & Snapshots</button>
+                <div class="tab-nav-spacer"></div>
+                <div class="snapshot-selector">
+                    <label>📅</label>
+                    <select id="snapshot-select" onchange="onSnapshotChange()">
+                        <option value="">Latest</option>
+                    </select>
                 </div>
-                <div id="live-banner" class="live-banner" style="display:none"></div>
+            </nav>
 
-                <div class="holdings-filters">
-                    <div class="filter-group">
-                        <label>Brokerage</label>
-                        <select id="filter-brokerage" onchange="applyHoldingsFilters()">
-                            <option value="">All</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Category</label>
-                        <select id="filter-category" onchange="applyHoldingsFilters()">
-                            <option value="">All</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Region</label>
-                        <select id="filter-region" onchange="applyHoldingsFilters()">
-                            <option value="">All</option>
-                        </select>
-                    </div>
-                    <div class="filter-summary" id="filter-summary"></div>
-                </div>
-
-                <table class="holdings-table">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="ticker" onclick="sortHoldings('ticker')">Symbol<span
-                                    class="sort-arrow"></span></th>
-                            <th>Shares</th>
-                            <th>Last Price</th>
-                            <th>AC/Share</th>
-                            <th>Total Cost</th>
-                            <th class="sortable" data-sort="value" onclick="sortHoldings('value')">Mkt Value<span
-                                    class="sort-arrow"> ▼</span></th>
-                            <th class="sortable" data-sort="pct" onclick="sortHoldings('pct')">% Acct<span
-                                    class="sort-arrow"></span></th>
-                            <th class="sortable" data-sort="security_type" onclick="sortHoldings('security_type')">
-                                Type<span class="sort-arrow"></span></th>
-                            <th class="sortable" data-sort="primaryCategory" onclick="sortHoldings('primaryCategory')">
-                                Category<span class="sort-arrow"></span></th>
-                            <th class="sortable" data-sort="primaryRegion" onclick="sortHoldings('primaryRegion')">
-                                Region<span class="sort-arrow"></span></th>
-                            <th>Brokerage</th>
-                        </tr>
-                    </thead>
-                    <tbody id="holdings-tbody"></tbody>
-                </table>
-                <p class="empty-msg" id="holdings-empty" style="display:none">No holdings yet — upload a CSV in the
-                    Upload tab.</p>
-            </section>
-        </div>
-
-        <!-- ── Tab 2: Portfolio Breakdown ───────────────────────── -->
-        <div class="tab-panel" id="tab-breakdown">
-            <section class="card" id="breakdown-section">
-                <div class="section-header">
-                    <h2>📊 Portfolio Breakdown</h2>
-                    <div class="header-controls">
-                        <div class="view-toggle">
-                            <button class="view-btn active" data-view="bars"
-                                onclick="setBreakdownView('bars')">Bars</button>
-                            <button class="view-btn" data-view="pie" onclick="setBreakdownView('pie')">Pie</button>
+            <!-- ── Tab 1: All Holdings ─────────────────────────────── -->
+            <div class="tab-panel active" id="tab-holdings">
+                <section class="card" id="holdings-section">
+                    <div class="section-header">
+                        <h2>All Holdings (<span id="holdings-count">0</span>)</h2>
+                        <div class="header-controls">
+                            <label class="live-toggle" title="Use live market prices instead of snapshot prices">
+                                <input type="checkbox" id="live-toggle" onchange="toggleLiveView()" />
+                                <span class="toggle-label">📡 Live</span>
+                            </label>
+                            <span id="total-value" class="total-value"></span>
                         </div>
-                        <span id="breakdown-total" class="total-value"></span>
                     </div>
-                </div>
-                <div class="analysis-section">
-                    <div class="analysis-header">
-                        <button onclick="generateAnalysis()" class="btn btn-accent" id="analyze-btn">🔮 Generate AI
-                            Analysis</button>
-                    </div>
-                    <div id="analysis-output" class="analysis-output" style="display:none"></div>
-                </div>
-                <div class="breakdown-grid">
-                    <div class="breakdown-panel breakdown-panel-main">
-                        <h3>By Category</h3>
-                        <div id="category-bars"></div>
-                        <div id="category-pie" class="pie-container" style="display:none"></div>
-                    </div>
-                    <div class="breakdown-panel breakdown-panel-side">
-                        <div class="breakdown-panel-header">
-                            <h3>By Region</h3>
-                            <div class="region-filter-toggle">
-                                <button class="rfilt-btn" data-rfilt="all" onclick="setRegionFilter('all')">All</button>
-                                <button class="rfilt-btn active" data-rfilt="equity"
-                                    onclick="setRegionFilter('equity')">Equity
-                                    Only</button>
-                            </div>
-                        </div>
-                        <div id="region-bars"></div>
-                        <div id="region-pie" class="pie-container" style="display:none"></div>
-                    </div>
-                </div>
-                <p class="empty-msg" id="breakdown-empty" style="display:none">No data yet — upload holdings first.</p>
-            </section>
-        </div>
+                    <div id="live-banner" class="live-banner" style="display:none"></div>
 
-        <!-- ── Tab 3: Targets & Rebalance ──────────────────────── -->
-        <div class="tab-panel" id="tab-targets">
-            <section class="card" id="targets-section">
-                <h2>🎯 Target Allocations</h2>
-                <div class="targets-panel">
-                    <h3>Category Targets</h3>
-                    <div id="category-targets"></div>
-                    <div class="targets-total">Total: <span id="category-total">0</span>%</div>
-                    <button onclick="saveTargets('category')" class="btn btn-primary">Save Category Targets</button>
-                </div>
-            </section>
-
-            <section class="card" id="rebalance-section">
-                <h2>⚖️ Rebalance Recommendations</h2>
-                <button onclick="loadRebalance()" class="btn btn-accent">Calculate Rebalance</button>
-                <div id="rebalance-summary" class="rebalance-summary"></div>
-                <div class="rebalance-grid">
-                    <div class="rebalance-panel">
-                        <h3>By Category</h3>
-                        <table class="rebalance-table" id="category-rebalance"></table>
-                    </div>
-                    <div class="rebalance-panel">
-                        <h3>By Region</h3>
-                        <table class="rebalance-table" id="region-rebalance"></table>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- ── Tab 5: Trends ────────────────────────────────────── -->
-        <div class="tab-panel" id="tab-trends">
-            <section class="card">
-                <h2>📈 Portfolio Trends</h2>
-                <p class="trends-note" id="trends-note">Tracking changes across your snapshots over time.</p>
-                <div class="trends-grid">
-                    <div class="trend-chart-card">
-                        <h3>Total Portfolio Value</h3>
-                        <canvas id="chart-total-value"></canvas>
-                    </div>
-                    <div class="trend-chart-card">
-                        <h3>Category Allocation Over Time</h3>
-                        <canvas id="chart-category-alloc"></canvas>
-                    </div>
-                    <div class="trend-chart-card">
-                        <h3>Cash & Treasury Buffer</h3>
-                        <canvas id="chart-cash-buffer"></canvas>
-                    </div>
-                </div>
-                <p class="empty-msg" id="trends-empty" style="display:none">Need at least 2 snapshots to show trends.
-                </p>
-            </section>
-        </div>
-
-        <!-- ── Tab 5: Upload & Snapshots ───────────────────────── -->
-        <div class="tab-panel" id="tab-upload">
-            <section class="card upload-section">
-                <h2>📂 Upload Holdings</h2>
-                <div class="upload-form">
-                    <div class="upload-form-row">
-                        <div class="upload-field">
+                    <div class="holdings-filters">
+                        <div class="filter-group">
                             <label>Brokerage</label>
-                            <select id="upload-brokerage">
-                                <option value="fidelity">Fidelity</option>
-                                <option value="schwab">Schwab</option>
+                            <select id="filter-brokerage" onchange="applyHoldingsFilters()">
+                                <option value="">All</option>
                             </select>
                         </div>
-                        <div class="upload-field upload-field-date">
-                            <label>Snapshot date</label>
-                            <input type="date" id="upload-date" />
+                        <div class="filter-group">
+                            <label>Category</label>
+                            <select id="filter-category" onchange="applyHoldingsFilters()">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Region</label>
+                            <select id="filter-region" onchange="applyHoldingsFilters()">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-summary" id="filter-summary"></div>
+                    </div>
+
+                    <table class="holdings-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="ticker" onclick="sortHoldings('ticker')">Symbol<span
+                                        class="sort-arrow"></span></th>
+                                <th>Shares</th>
+                                <th>Last Price</th>
+                                <th>AC/Share</th>
+                                <th>Total Cost</th>
+                                <th class="sortable" data-sort="value" onclick="sortHoldings('value')">Mkt Value<span
+                                        class="sort-arrow"> ▼</span></th>
+                                <th class="sortable" data-sort="pct" onclick="sortHoldings('pct')">% Acct<span
+                                        class="sort-arrow"></span></th>
+                                <th class="sortable" data-sort="security_type" onclick="sortHoldings('security_type')">
+                                    Type<span class="sort-arrow"></span></th>
+                                <th class="sortable" data-sort="primaryCategory"
+                                    onclick="sortHoldings('primaryCategory')">
+                                    Category<span class="sort-arrow"></span></th>
+                                <th class="sortable" data-sort="primaryRegion" onclick="sortHoldings('primaryRegion')">
+                                    Region<span class="sort-arrow"></span></th>
+                                <th>Brokerage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdings-tbody"></tbody>
+                    </table>
+                    <p class="empty-msg" id="holdings-empty" style="display:none">No holdings yet — upload a CSV in the
+                        Upload tab.</p>
+                </section>
+            </div>
+
+            <!-- ── Tab 2: Portfolio Breakdown ───────────────────────── -->
+            <div class="tab-panel" id="tab-breakdown">
+                <section class="card" id="breakdown-section">
+                    <div class="section-header">
+                        <h2>📊 Portfolio Breakdown</h2>
+                        <div class="header-controls">
+                            <div class="view-toggle">
+                                <button class="view-btn active" data-view="bars"
+                                    onclick="setBreakdownView('bars')">Bars</button>
+                                <button class="view-btn" data-view="pie" onclick="setBreakdownView('pie')">Pie</button>
+                            </div>
+                            <span id="breakdown-total" class="total-value"></span>
                         </div>
                     </div>
-                    <div class="upload-file-row">
-                        <input type="file" id="upload-file" accept=".csv" />
-                        <button onclick="uploadCSV()" class="btn btn-primary">Upload</button>
+                    <div class="analysis-section">
+                        <div class="analysis-header">
+                            <button onclick="generateAnalysis()" class="btn btn-accent" id="analyze-btn">🔮 Generate AI
+                                Analysis</button>
+                        </div>
+                        <div id="analysis-output" class="analysis-output" style="display:none"></div>
                     </div>
-                </div>
-                <div id="upload-status" class="status-msg"></div>
-            </section>
+                    <div class="breakdown-grid">
+                        <div class="breakdown-panel breakdown-panel-main">
+                            <h3>By Category</h3>
+                            <div id="category-bars"></div>
+                            <div id="category-pie" class="pie-container" style="display:none"></div>
+                        </div>
+                        <div class="breakdown-panel breakdown-panel-side">
+                            <div class="breakdown-panel-header">
+                                <h3>By Region</h3>
+                                <div class="region-filter-toggle">
+                                    <button class="rfilt-btn" data-rfilt="all"
+                                        onclick="setRegionFilter('all')">All</button>
+                                    <button class="rfilt-btn active" data-rfilt="equity"
+                                        onclick="setRegionFilter('equity')">Equity
+                                        Only</button>
+                                </div>
+                            </div>
+                            <div id="region-bars"></div>
+                            <div id="region-pie" class="pie-container" style="display:none"></div>
+                        </div>
+                    </div>
+                    <p class="empty-msg" id="breakdown-empty" style="display:none">No data yet — upload holdings first.
+                    </p>
+                </section>
+            </div>
 
-            <section class="card" id="snapshot-section">
-                <div class="section-header">
-                    <h2>📅 Snapshots</h2>
-                </div>
-                <div id="snapshot-list"></div>
+            <!-- ── Tab 3: Targets & Rebalance ──────────────────────── -->
+            <div class="tab-panel" id="tab-targets">
+                <section class="card" id="targets-section">
+                    <h2>🎯 Target Allocations</h2>
+                    <div class="targets-panel">
+                        <h3>Category Targets</h3>
+                        <div id="category-targets"></div>
+                        <div class="targets-total">Total: <span id="category-total">0</span>%</div>
+                        <button onclick="saveTargets('category')" class="btn btn-primary">Save Category Targets</button>
+                    </div>
+                </section>
+
+                <section class="card" id="rebalance-section">
+                    <h2>⚖️ Rebalance Recommendations</h2>
+                    <button onclick="loadRebalance()" class="btn btn-accent">Calculate Rebalance</button>
+                    <div id="rebalance-summary" class="rebalance-summary"></div>
+                    <div class="rebalance-grid">
+                        <div class="rebalance-panel">
+                            <h3>By Category</h3>
+                            <table class="rebalance-table" id="category-rebalance"></table>
+                        </div>
+                        <div class="rebalance-panel">
+                            <h3>By Region</h3>
+                            <table class="rebalance-table" id="region-rebalance"></table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ── Tab 5: Trends ────────────────────────────────────── -->
+            <div class="tab-panel" id="tab-trends">
+                <section class="card">
+                    <h2>📈 Portfolio Trends</h2>
+                    <p class="trends-note" id="trends-note">Tracking changes across your snapshots over time.</p>
+                    <div class="trends-grid">
+                        <div class="trend-chart-card">
+                            <h3>Total Portfolio Value</h3>
+                            <canvas id="chart-total-value"></canvas>
+                        </div>
+                        <div class="trend-chart-card">
+                            <h3>Category Allocation Over Time</h3>
+                            <canvas id="chart-category-alloc"></canvas>
+                        </div>
+                        <div class="trend-chart-card">
+                            <h3>Cash & Treasury Buffer</h3>
+                            <canvas id="chart-cash-buffer"></canvas>
+                        </div>
+                    </div>
+                    <p class="empty-msg" id="trends-empty" style="display:none">Need at least 2 snapshots to show
+                        trends.
+                    </p>
+                </section>
+            </div>
+
+            <!-- ── Tab 5: Upload & Snapshots ───────────────────────── -->
+            <div class="tab-panel" id="tab-upload">
+                <section class="card upload-section">
+                    <h2>📂 Upload Holdings</h2>
+                    <div class="upload-form">
+                        <div class="upload-form-row">
+                            <div class="upload-field">
+                                <label>Brokerage</label>
+                                <select id="upload-brokerage">
+                                    <option value="fidelity">Fidelity</option>
+                                    <option value="schwab">Schwab</option>
+                                </select>
+                            </div>
+                            <div class="upload-field upload-field-date">
+                                <label>Snapshot date</label>
+                                <input type="date" id="upload-date" />
+                            </div>
+                        </div>
+                        <div class="upload-file-row">
+                            <input type="file" id="upload-file" accept=".csv" />
+                            <button onclick="uploadCSV()" class="btn btn-primary">Upload</button>
+                        </div>
+                    </div>
+                    <div id="upload-status" class="status-msg"></div>
+                </section>
+
+                <section class="card" id="snapshot-section">
+                    <div class="section-header">
+                        <h2>📅 Snapshots</h2>
+                    </div>
+                    <div id="snapshot-list"></div>
+                </section>
+            </div>
+
+        </div> <!-- /section-personal -->
+
+        <!-- ── The World Section ─────────────────────────────── -->
+        <div id="section-world" class="section-content">
+            <section class="card">
+                <p class="coming-soon">Coming soon — macro benchmarks, rates, and market indicators.</p>
             </section>
         </div>
     </main>

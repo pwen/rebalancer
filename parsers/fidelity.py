@@ -9,6 +9,9 @@ import csv
 import io
 import re
 
+# Money-market / cash-equivalent tickers where price = $1.00 and shares = value
+_CASH_TICKERS = {"SPAXX", "FDRXX", "FCASH", "SWVXX", "FZFXX", "SPRXX"}
+
 
 def parse_fidelity_csv(file_content: str) -> list[dict]:
     """Parse a Fidelity positions CSV and return normalized holdings."""
@@ -51,9 +54,18 @@ def parse_fidelity_csv(file_content: str) -> list[dict]:
         if value == 0 and quantity == 0:
             continue
 
+        # Money-market funds: price is always $1, shares = dollar value
+        if ticker.upper() in _CASH_TICKERS and value and (not quantity or not price):
+            price = 1.0
+            quantity = value
+
         cost_basis = _parse_number(
             row.get("Cost Basis Total") or row.get("Cost Basis") or "0"
         )
+
+        # For money-market funds, cost basis equals the current value
+        if ticker.upper() in _CASH_TICKERS and not cost_basis and value:
+            cost_basis = value
 
         account = (row.get("Account Name") or row.get("Account Number") or "").strip()
 

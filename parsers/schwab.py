@@ -11,6 +11,9 @@ import csv
 import io
 import re
 
+# Money-market / cash-equivalent tickers where price = $1.00 and shares = value
+_CASH_TICKERS = {"SPAXX", "FDRXX", "FCASH", "SWVXX", "FZFXX", "SPRXX"}
+
 
 def parse_schwab_csv(file_content: str) -> list[dict]:
     """Parse a Schwab positions CSV and return normalized holdings."""
@@ -71,6 +74,13 @@ def parse_schwab_csv(file_content: str) -> list[dict]:
 
         if value == 0 and quantity == 0:
             continue
+
+        # Money-market funds: price is always $1, shares = dollar value
+        if ticker.upper() in _CASH_TICKERS and value and (not quantity or not price):
+            price = 1.0
+            quantity = value
+        if ticker.upper() in _CASH_TICKERS and not cost_basis and value:
+            cost_basis = value
 
         holdings.append(
             {
