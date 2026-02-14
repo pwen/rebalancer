@@ -21,6 +21,13 @@
             <button class="tab-btn" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
             <button class="tab-btn" data-tab="targets" onclick="switchTab('targets')">Targets & Rebalance</button>
             <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload & Snapshots</button>
+            <div class="tab-nav-spacer"></div>
+            <div class="snapshot-selector">
+                <label>📅</label>
+                <select id="snapshot-select" onchange="onSnapshotChange()">
+                    <option value="">Latest</option>
+                </select>
+            </div>
         </nav>
 
         <!-- ── Tab 1: All Holdings ─────────────────────────────── -->
@@ -105,7 +112,8 @@
                 </div>
                 <div class="analysis-section">
                     <div class="analysis-header">
-                        <button onclick="generateAnalysis()" class="btn btn-accent" id="analyze-btn">🔮 Generate AI Analysis</button>
+                        <button onclick="generateAnalysis()" class="btn btn-accent" id="analyze-btn">🔮 Generate AI
+                            Analysis</button>
                     </div>
                     <div id="analysis-output" class="analysis-output" style="display:none"></div>
                 </div>
@@ -191,9 +199,6 @@
             <section class="card" id="snapshot-section">
                 <div class="section-header">
                     <h2>📅 Snapshots</h2>
-                    <select id="snapshot-select" onchange="onSnapshotChange()">
-                        <option value="">Latest</option>
-                    </select>
                 </div>
                 <div id="snapshot-list"></div>
             </section>

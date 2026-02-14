@@ -17,33 +17,27 @@ in **Markdown**. No jargon like "equity beta" or "duration risk" — instead, ex
 the portfolio *says* about the investor's view of the world, as if you're talking to a \
 smart friend over coffee.
 
-Structure (use these exact headers):
+Structure:
 
-### The Big Picture
-One punchy paragraph (~50 words) that names the portfolio's overall philosophy in plain \
-language (e.g. "macro-aware, inflation-hedged, value-oriented") and its single biggest bet.
+First, write one punchy paragraph (<50 words, NO header) that names the portfolio's \
+overall philosophy in plain language (e.g. "macro-aware, inflation-hedged, value-oriented") \
+and its single biggest bet. This is the opening — just start writing, no "## Big Picture" header.
 
-### What This Portfolio Is Saying
-Write 2-3 flowing paragraphs (not bullet points). Compare to a standard 60/40 US-centric \
-portfolio and explain the key tilts: what you're overweight, underweight, and *why* that \
-matters. Weave together:
-- The macro thesis (inflation, rates, recession, dollar strength/weakness)
-- The geopolitical stance (EM conviction, commodity-producer nations, de-dollarization, \
-  US exceptionalism vs global diversification)
-- What the cash/treasury buffer means strategically (optionality, dry powder, timing)
-- The commodity/precious metals/crypto angle
+## What This Portfolio Is Saying
+One single flowing paragraph, under 120 words (not bullet points). Compare to a standard \
+60/40 US-centric portfolio and explain the key tilts: what you're overweight, underweight, \
+and *why* that matters. Weave together the macro thesis, the geopolitical stance, what the \
+cash/treasury buffer means strategically, and the commodity/precious metals/crypto angle. \
+Frame it as "this portfolio is built for a world where X, Y, Z happen."
 
-Frame it as "this portfolio is built for a world where X, Y, Z happen" — paint the \
-scenario the investor is positioning for.
+Then, without any header, write one final paragraph (under 75 words) on the main risk — \
+what would need to happen in the world for this allocation to look bad? Start it with \
+something like "The risk is…" or "Where this falls apart is…" — no "## The Risk" header.
 
-### The Risk of Being Wrong
-One paragraph on the main scenario where this portfolio underperforms. Be specific — \
-what would need to happen in the world for this allocation to look bad? \
-(e.g. "US exceptionalism persists, tech keeps grinding higher, and you sit in cash \
-watching the S&P rally another 20%")
-
-Write conversationally but with authority. Reference actual percentages from the data \
-to ground your analysis, but don't list holdings. Total ~250-300 words.
+Write conversationally but with authority. Do NOT reference specific percentages, \
+dollar amounts, or numbers — use plain English descriptors like "nearly half", \
+"a significant allocation", "heavily overweight", "a small slice" instead. \
+Do NOT include any citation references like [1], [2], [5] etc. No footnotes or sources.
 
 Portfolio data:
 """

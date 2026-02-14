@@ -40,9 +40,35 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
 /* ── Tabs ───────────────────────────────────────────────── */
 .tab-nav {
   display: flex;
+  align-items: center;
   gap: 0;
   border-bottom: 2px solid var(--border);
   margin-bottom: 1.5rem;
+}
+.tab-nav-spacer { flex: 1; }
+.snapshot-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: -2px;
+  padding: 0 0.5rem;
+}
+.snapshot-selector label {
+  font-size: 0.85rem;
+  cursor: default;
+}
+.snapshot-selector select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.snapshot-selector select:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 .tab-btn {
   background: none;
@@ -197,15 +223,15 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   background: var(--bg);
   border-radius: 8px;
   border: 1px solid var(--border);
-  font-size: 0.85rem;
-  line-height: 1.7;
+  font-size: 0.95rem;
+  line-height: 1.6;
   color: var(--text);
 }
 .analysis-output h3.analysis-heading {
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: var(--accent);
-  margin: 1.25rem 0 0.4rem 0;
-  padding-bottom: 0.25rem;
+  margin: 0.75rem 0 0.25rem 0;
+  padding-bottom: 0.2rem;
   border-bottom: 1px solid var(--border);
 }
 .analysis-output h3.analysis-heading:first-child {

@@ -843,6 +843,7 @@ async function generateAnalysis() {
 function markdownToHtml(md) {
     // Simple markdown to HTML converter for our analysis output
     let html = md
+        .replace(/\[\d+\]/g, '')  // strip citation references like [1][2][5]
         .replace(/^## (.+)$/gm, '<h3 class="analysis-heading">$1</h3>')
         .replace(/^### (.+)$/gm, '<h4 class="analysis-subheading">$1</h4>')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
