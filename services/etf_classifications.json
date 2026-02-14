@@ -1,0 +1,155 @@
+{
+  "_meta": {
+    "description": "Builtin ETF/fund classification map — region and sector breakdowns.",
+    "instructions": "To regenerate, ask AI to output this JSON format. Each ticker needs 'region' and 'category' dicts that each sum to 100.",
+    "valid_regions": ["US", "DM", "EM", "Global"],
+    "valid_categories": [
+      "Short-Term Treasuries", "Long-Term Treasuries", "Cash",
+      "Technology", "Financials", "Health Care", "Consumer Discretionary",
+      "Communication Services", "Industrials", "Consumer Staples", "Energy",
+      "Utilities", "Real Estate", "Materials", "Precious Metals",
+      "Commodities", "Cryptocurrency", "Other"
+    ]
+  },
+
+  "VTI":   {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "ITOT":  {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "SPTM":  {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "VOO":   {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "SPY":   {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "IVV":   {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "DIA":   {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "SCHB":  {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+  "SCHX":  {"region": {"US": 100}, "category": {"Technology": 30, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Communication Services": 9, "Industrials": 9, "Consumer Staples": 6, "Energy": 4, "Utilities": 3, "Real Estate": 2, "Materials": 2}},
+
+  "RSP":   {"region": {"US": 100}, "category": {"Industrials": 14, "Financials": 13, "Health Care": 12, "Consumer Discretionary": 10, "Technology": 9, "Consumer Staples": 7, "Real Estate": 7, "Materials": 6, "Utilities": 6, "Energy": 5, "Communication Services": 5, "Other": 6}},
+
+  "QQQ":   {"region": {"US": 100}, "category": {"Technology": 50, "Communication Services": 16, "Consumer Discretionary": 13, "Health Care": 7, "Industrials": 5, "Consumer Staples": 4, "Financials": 2, "Energy": 1, "Utilities": 1, "Other": 1}},
+  "QQQM":  {"region": {"US": 100}, "category": {"Technology": 50, "Communication Services": 16, "Consumer Discretionary": 13, "Health Care": 7, "Industrials": 5, "Consumer Staples": 4, "Financials": 2, "Energy": 1, "Utilities": 1, "Other": 1}},
+
+  "IJR":   {"region": {"US": 100}, "category": {"Industrials": 16, "Financials": 16, "Health Care": 14, "Technology": 12, "Consumer Discretionary": 10, "Real Estate": 7, "Energy": 5, "Materials": 5, "Consumer Staples": 4, "Utilities": 4, "Communication Services": 3, "Other": 4}},
+  "SCHA":  {"region": {"US": 100}, "category": {"Industrials": 16, "Financials": 16, "Health Care": 14, "Technology": 12, "Consumer Discretionary": 10, "Real Estate": 7, "Energy": 5, "Materials": 5, "Consumer Staples": 4, "Utilities": 4, "Communication Services": 3, "Other": 4}},
+  "VTWO":  {"region": {"US": 100}, "category": {"Industrials": 16, "Financials": 16, "Health Care": 14, "Technology": 12, "Consumer Discretionary": 10, "Real Estate": 7, "Energy": 5, "Materials": 5, "Consumer Staples": 4, "Utilities": 4, "Communication Services": 3, "Other": 4}},
+  "IWM":   {"region": {"US": 100}, "category": {"Industrials": 16, "Financials": 16, "Health Care": 14, "Technology": 12, "Consumer Discretionary": 10, "Real Estate": 7, "Energy": 5, "Materials": 5, "Consumer Staples": 4, "Utilities": 4, "Communication Services": 3, "Other": 4}},
+  "VB":    {"region": {"US": 100}, "category": {"Industrials": 16, "Financials": 16, "Health Care": 14, "Technology": 12, "Consumer Discretionary": 10, "Real Estate": 7, "Energy": 5, "Materials": 5, "Consumer Staples": 4, "Utilities": 4, "Communication Services": 3, "Other": 4}},
+
+  "SCHM":  {"region": {"US": 100}, "category": {"Industrials": 16, "Technology": 14, "Financials": 13, "Consumer Discretionary": 12, "Health Care": 10, "Real Estate": 6, "Materials": 5, "Consumer Staples": 5, "Energy": 5, "Utilities": 5, "Communication Services": 4, "Other": 5}},
+  "MDY":   {"region": {"US": 100}, "category": {"Industrials": 16, "Technology": 14, "Financials": 13, "Consumer Discretionary": 12, "Health Care": 10, "Real Estate": 6, "Materials": 5, "Consumer Staples": 5, "Energy": 5, "Utilities": 5, "Communication Services": 4, "Other": 5}},
+  "VO":    {"region": {"US": 100}, "category": {"Industrials": 16, "Technology": 14, "Financials": 13, "Consumer Discretionary": 12, "Health Care": 10, "Real Estate": 6, "Materials": 5, "Consumer Staples": 5, "Energy": 5, "Utilities": 5, "Communication Services": 4, "Other": 5}},
+
+  "XLK":   {"region": {"US": 100}, "category": {"Technology": 100}},
+  "XLF":   {"region": {"US": 100}, "category": {"Financials": 100}},
+  "XLV":   {"region": {"US": 100}, "category": {"Health Care": 100}},
+  "XLY":   {"region": {"US": 100}, "category": {"Consumer Discretionary": 100}},
+  "XLC":   {"region": {"US": 100}, "category": {"Communication Services": 100}},
+  "XLI":   {"region": {"US": 100}, "category": {"Industrials": 100}},
+  "XLP":   {"region": {"US": 100}, "category": {"Consumer Staples": 100}},
+  "XLE":   {"region": {"US": 100}, "category": {"Energy": 100}},
+  "XLU":   {"region": {"US": 100}, "category": {"Utilities": 100}},
+  "XLRE":  {"region": {"US": 100}, "category": {"Real Estate": 100}},
+  "FENY":  {"region": {"US": 100}, "category": {"Energy": 100}},
+  "XOP":   {"region": {"US": 100}, "category": {"Energy": 100}},
+  "AMLP":  {"region": {"US": 100}, "category": {"Energy": 100}},
+
+  "VT":    {"region": {"US": 60, "DM": 28, "EM": 12}, "category": {"Technology": 25, "Financials": 15, "Health Care": 10, "Consumer Discretionary": 11, "Industrials": 10, "Communication Services": 7, "Consumer Staples": 7, "Energy": 5, "Materials": 4, "Utilities": 3, "Real Estate": 2, "Other": 1}},
+  "ACWI":  {"region": {"US": 60, "DM": 28, "EM": 12}, "category": {"Technology": 25, "Financials": 15, "Health Care": 10, "Consumer Discretionary": 11, "Industrials": 10, "Communication Services": 7, "Consumer Staples": 7, "Energy": 5, "Materials": 4, "Utilities": 3, "Real Estate": 2, "Other": 1}},
+
+  "VEA":   {"region": {"DM": 100}, "category": {"Financials": 19, "Industrials": 15, "Health Care": 11, "Consumer Discretionary": 11, "Technology": 10, "Consumer Staples": 9, "Materials": 7, "Energy": 5, "Communication Services": 4, "Utilities": 4, "Real Estate": 3, "Other": 2}},
+  "EFA":   {"region": {"DM": 100}, "category": {"Financials": 19, "Industrials": 15, "Health Care": 11, "Consumer Discretionary": 11, "Technology": 10, "Consumer Staples": 9, "Materials": 7, "Energy": 5, "Communication Services": 4, "Utilities": 4, "Real Estate": 3, "Other": 2}},
+  "IEFA":  {"region": {"DM": 100}, "category": {"Financials": 19, "Industrials": 15, "Health Care": 11, "Consumer Discretionary": 11, "Technology": 10, "Consumer Staples": 9, "Materials": 7, "Energy": 5, "Communication Services": 4, "Utilities": 4, "Real Estate": 3, "Other": 2}},
+  "SCHF":  {"region": {"DM": 100}, "category": {"Financials": 19, "Industrials": 15, "Health Care": 11, "Consumer Discretionary": 11, "Technology": 10, "Consumer Staples": 9, "Materials": 7, "Energy": 5, "Communication Services": 4, "Utilities": 4, "Real Estate": 3, "Other": 2}},
+
+  "VXUS":  {"region": {"DM": 78, "EM": 22}, "category": {"Financials": 19, "Technology": 14, "Industrials": 13, "Consumer Discretionary": 12, "Health Care": 9, "Consumer Staples": 8, "Materials": 7, "Energy": 5, "Communication Services": 5, "Utilities": 4, "Real Estate": 2, "Other": 2}},
+  "IXUS":  {"region": {"DM": 75, "EM": 25}, "category": {"Financials": 19, "Technology": 14, "Industrials": 13, "Consumer Discretionary": 12, "Health Care": 9, "Consumer Staples": 8, "Materials": 7, "Energy": 5, "Communication Services": 5, "Utilities": 4, "Real Estate": 2, "Other": 2}},
+  "VIGI":  {"region": {"DM": 80, "EM": 20}, "category": {"Financials": 19, "Technology": 14, "Industrials": 13, "Consumer Discretionary": 12, "Health Care": 9, "Consumer Staples": 8, "Materials": 7, "Energy": 5, "Communication Services": 5, "Utilities": 4, "Real Estate": 2, "Other": 2}},
+
+  "EWS":   {"region": {"DM": 100}, "category": {"Financials": 35, "Industrials": 15, "Real Estate": 15, "Technology": 10, "Communication Services": 10, "Consumer Discretionary": 5, "Health Care": 5, "Consumer Staples": 3, "Utilities": 2}},
+  "EWJ":   {"region": {"DM": 100}, "category": {"Industrials": 20, "Consumer Discretionary": 16, "Technology": 16, "Financials": 10, "Health Care": 8, "Communication Services": 8, "Materials": 7, "Consumer Staples": 7, "Real Estate": 3, "Utilities": 3, "Energy": 2}},
+  "EWG":   {"region": {"DM": 100}, "category": {"Industrials": 20, "Financials": 18, "Consumer Discretionary": 12, "Technology": 12, "Health Care": 10, "Materials": 8, "Utilities": 5, "Consumer Staples": 5, "Communication Services": 5, "Energy": 3, "Other": 2}},
+  "EWU":   {"region": {"DM": 100}, "category": {"Financials": 20, "Consumer Staples": 14, "Health Care": 12, "Energy": 12, "Industrials": 10, "Materials": 8, "Communication Services": 5, "Consumer Discretionary": 5, "Utilities": 5, "Technology": 5, "Other": 4}},
+  "EWA":   {"region": {"DM": 100}, "category": {"Financials": 30, "Materials": 20, "Health Care": 8, "Real Estate": 8, "Energy": 5, "Industrials": 5, "Consumer Staples": 5, "Consumer Discretionary": 5, "Communication Services": 5, "Technology": 5, "Utilities": 4}},
+  "EWC":   {"region": {"DM": 100}, "category": {"Financials": 35, "Energy": 15, "Materials": 10, "Industrials": 10, "Technology": 10, "Consumer Discretionary": 5, "Communication Services": 5, "Utilities": 3, "Health Care": 3, "Consumer Staples": 2, "Real Estate": 2}},
+
+  "VWO":   {"region": {"EM": 100}, "category": {"Technology": 22, "Financials": 22, "Consumer Discretionary": 13, "Communication Services": 9, "Materials": 7, "Energy": 6, "Industrials": 6, "Consumer Staples": 6, "Health Care": 4, "Utilities": 3, "Real Estate": 2}},
+  "EEM":   {"region": {"EM": 100}, "category": {"Technology": 22, "Financials": 22, "Consumer Discretionary": 13, "Communication Services": 9, "Materials": 7, "Energy": 6, "Industrials": 6, "Consumer Staples": 6, "Health Care": 4, "Utilities": 3, "Real Estate": 2}},
+  "IEMG":  {"region": {"EM": 100}, "category": {"Technology": 22, "Financials": 22, "Consumer Discretionary": 13, "Communication Services": 9, "Materials": 7, "Energy": 6, "Industrials": 6, "Consumer Staples": 6, "Health Care": 4, "Utilities": 3, "Real Estate": 2}},
+  "SCHE":  {"region": {"EM": 100}, "category": {"Technology": 22, "Financials": 22, "Consumer Discretionary": 13, "Communication Services": 9, "Materials": 7, "Energy": 6, "Industrials": 6, "Consumer Staples": 6, "Health Care": 4, "Utilities": 3, "Real Estate": 2}},
+
+  "CQQQ":  {"region": {"EM": 100}, "category": {"Technology": 75, "Communication Services": 15, "Consumer Discretionary": 10}},
+  "FLCH":  {"region": {"EM": 100}, "category": {"Technology": 25, "Communication Services": 15, "Financials": 15, "Consumer Discretionary": 15, "Industrials": 10, "Materials": 5, "Energy": 5, "Health Care": 5, "Consumer Staples": 3, "Utilities": 2}},
+  "INDA":  {"region": {"EM": 100}, "category": {"Financials": 25, "Technology": 20, "Consumer Discretionary": 10, "Energy": 10, "Industrials": 8, "Materials": 7, "Consumer Staples": 7, "Health Care": 5, "Communication Services": 5, "Utilities": 3}},
+  "EWZ":   {"region": {"EM": 100}, "category": {"Financials": 25, "Energy": 15, "Materials": 15, "Consumer Staples": 12, "Utilities": 10, "Industrials": 8, "Health Care": 5, "Communication Services": 5, "Consumer Discretionary": 3, "Technology": 2}},
+  "ILF":   {"region": {"EM": 100}, "category": {"Financials": 25, "Materials": 15, "Energy": 12, "Consumer Staples": 12, "Utilities": 8, "Industrials": 8, "Health Care": 5, "Communication Services": 5, "Consumer Discretionary": 5, "Technology": 3, "Other": 2}},
+
+  "ICLN":  {"region": {"US": 30, "DM": 40, "EM": 30}, "category": {"Utilities": 60, "Industrials": 25, "Technology": 10, "Other": 5}},
+  "IXC":   {"region": {"US": 50, "DM": 40, "EM": 10}, "category": {"Energy": 100}},
+  "GUNR":  {"region": {"US": 30, "DM": 40, "EM": 30}, "category": {"Materials": 30, "Energy": 30, "Industrials": 15, "Consumer Staples": 10, "Utilities": 10, "Other": 5}},
+  "COPX":  {"region": {"US": 15, "DM": 40, "EM": 45}, "category": {"Materials": 100}},
+
+  "SHY":   {"region": {"US": 100}, "category": {"Short-Term Treasuries": 100}},
+  "VGSH":  {"region": {"US": 100}, "category": {"Short-Term Treasuries": 100}},
+  "SCHO":  {"region": {"US": 100}, "category": {"Short-Term Treasuries": 100}},
+  "STIP":  {"region": {"US": 100}, "category": {"Short-Term Treasuries": 100}},
+  "BSV":   {"region": {"US": 100}, "category": {"Short-Term Treasuries": 60, "Other": 40}},
+
+  "TLT":   {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "IEF":   {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "VGIT":  {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "VBIL":  {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "TIP":   {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "TIPS":  {"region": {"US": 100}, "category": {"Long-Term Treasuries": 100}},
+  "GOVT":  {"region": {"US": 100}, "category": {"Short-Term Treasuries": 40, "Long-Term Treasuries": 60}},
+  "BIV":   {"region": {"US": 100}, "category": {"Long-Term Treasuries": 50, "Other": 50}},
+  "BLV":   {"region": {"US": 100}, "category": {"Long-Term Treasuries": 50, "Other": 50}},
+
+  "BND":   {"region": {"US": 100}, "category": {"Short-Term Treasuries": 20, "Long-Term Treasuries": 30, "Other": 50}},
+  "AGG":   {"region": {"US": 100}, "category": {"Short-Term Treasuries": 20, "Long-Term Treasuries": 30, "Other": 50}},
+  "SCHZ":  {"region": {"US": 100}, "category": {"Short-Term Treasuries": 20, "Long-Term Treasuries": 30, "Other": 50}},
+
+  "LQD":   {"region": {"US": 100}, "category": {"Other": 100}},
+  "HYG":   {"region": {"US": 100}, "category": {"Other": 100}},
+  "JNK":   {"region": {"US": 100}, "category": {"Other": 100}},
+  "VCSH":  {"region": {"US": 100}, "category": {"Other": 100}},
+  "VCIT":  {"region": {"US": 100}, "category": {"Other": 100}},
+
+  "BNDX":  {"region": {"DM": 70, "EM": 30}, "category": {"Other": 100}},
+  "EMLC":  {"region": {"EM": 100}, "category": {"Other": 100}},
+  "EMB":   {"region": {"EM": 100}, "category": {"Other": 100}},
+  "IAGG":  {"region": {"DM": 70, "EM": 30}, "category": {"Other": 100}},
+
+  "GLD":   {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "IAU":   {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "GLDM":  {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "SLV":   {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "SIVR":  {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "PPLT":  {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "GDX":   {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+  "GDXJ":  {"region": {"Global": 100}, "category": {"Precious Metals": 100}},
+
+  "DBC":   {"region": {"Global": 100}, "category": {"Commodities": 100}},
+  "GSG":   {"region": {"Global": 100}, "category": {"Commodities": 100}},
+  "PDBC":  {"region": {"Global": 100}, "category": {"Commodities": 100}},
+  "COMT":  {"region": {"Global": 100}, "category": {"Commodities": 100}},
+  "USO":   {"region": {"Global": 100}, "category": {"Commodities": 100}},
+
+  "VNQ":   {"region": {"US": 100}, "category": {"Real Estate": 100}},
+  "VNQI":  {"region": {"DM": 60, "EM": 40}, "category": {"Real Estate": 100}},
+  "IYR":   {"region": {"US": 100}, "category": {"Real Estate": 100}},
+  "SCHH":  {"region": {"US": 100}, "category": {"Real Estate": 100}},
+  "RWR":   {"region": {"US": 100}, "category": {"Real Estate": 100}},
+
+  "IBIT":  {"region": {"Global": 100}, "category": {"Cryptocurrency": 100}},
+  "GBTC":  {"region": {"Global": 100}, "category": {"Cryptocurrency": 100}},
+  "ETHE":  {"region": {"Global": 100}, "category": {"Cryptocurrency": 100}},
+  "BITO":  {"region": {"Global": 100}, "category": {"Cryptocurrency": 100}},
+  "FBTC":  {"region": {"Global": 100}, "category": {"Cryptocurrency": 100}},
+
+  "SPAXX": {"region": {"US": 100}, "category": {"Cash": 100}},
+  "FDRXX": {"region": {"US": 100}, "category": {"Cash": 100}},
+  "FCASH": {"region": {"US": 100}, "category": {"Cash": 100}},
+  "SWVXX": {"region": {"US": 100}, "category": {"Cash": 100}},
+  "VMFXX": {"region": {"US": 100}, "category": {"Cash": 100}},
+  "SGOV":  {"region": {"US": 100}, "category": {"Cash": 100}},
+  "SHV":   {"region": {"US": 100}, "category": {"Cash": 100}},
+  "BIL":   {"region": {"US": 100}, "category": {"Cash": 100}}
+}
