@@ -6,6 +6,10 @@ let allHoldings = [];   // cached for filtering
 let holdingsSort = { key: 'value', dir: -1 };  // default: by value desc
 let activeTab = 'holdings';
 let breakdownView = 'bars';  // 'bars' or 'pie'
+let regionFilter = 'equity';   // 'all' or 'equity'
+
+// Categories excluded in "Equity Only" region view
+const BOND_CASH_CATEGORIES = new Set(['Cash', 'Short-Term Treasuries', 'Long-Term Treasuries']);
 
 // Color map matching CSS bar colors
 const PIE_COLORS = {
@@ -124,12 +128,11 @@ async function loadBreakdown() {
         document.getElementById('breakdown-total').textContent = fmtTotal;
 
         // Render bars
-        renderBars('region-bars', breakdownData.by_region);
+        renderRegionBreakdown();
         renderBars('category-bars', breakdownData.by_category);
 
         // Render pies if in pie view
         if (breakdownView === 'pie') {
-            renderPie('region-pie', breakdownData.by_region);
             renderPie('category-pie', breakdownData.by_category);
         }
 
@@ -207,10 +210,67 @@ function setBreakdownView(view) {
     document.getElementById('region-pie').style.display = showBars ? 'none' : '';
     document.getElementById('category-pie').style.display = showBars ? 'none' : '';
 
-    // Render pies on first switch (or re-render with latest data)
-    if (!showBars && breakdownData) {
-        renderPie('region-pie', breakdownData.by_region);
-        renderPie('category-pie', breakdownData.by_category);
+    // Re-render with current data
+    if (breakdownData) {
+        renderRegionBreakdown();
+        if (!showBars) {
+            renderPie('category-pie', breakdownData.by_category);
+        }
+    }
+}
+
+function setRegionFilter(filter) {
+    regionFilter = filter;
+    document.querySelectorAll('.rfilt-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.rfilt === filter);
+    });
+    renderRegionBreakdown();
+}
+
+function computeFilteredRegion() {
+    if (!breakdownData || !breakdownData.holdings) return breakdownData.by_region;
+    if (regionFilter === 'all') return breakdownData.by_region;
+
+    // Recompute region breakdown excluding bond/cash categories
+    const regionTotals = {};
+    let filteredTotal = 0;
+
+    for (const h of breakdownData.holdings) {
+        const cat = h.category || {};
+        // Calculate what % of this holding is in non-bond/cash categories
+        let excludedPct = 0;
+        for (const [catName, catPct] of Object.entries(cat)) {
+            if (BOND_CASH_CATEGORIES.has(catName)) excludedPct += catPct;
+        }
+        const equityRatio = (100 - excludedPct) / 100;
+        if (equityRatio <= 0) continue;
+
+        const adjustedValue = h.value * equityRatio;
+        filteredTotal += adjustedValue;
+
+        const region = h.region || {};
+        for (const [regName, regPct] of Object.entries(region)) {
+            regionTotals[regName] = (regionTotals[regName] || 0) + adjustedValue * regPct / 100;
+        }
+    }
+
+    if (filteredTotal === 0) return {};
+
+    // Build sorted result
+    const sorted = Object.entries(regionTotals).sort((a, b) => b[1] - a[1]);
+    const result = {};
+    for (const [k, v] of sorted) {
+        result[k] = { value: Math.round(v * 100) / 100, pct: Math.round(v / filteredTotal * 10000) / 100 };
+    }
+    return result;
+}
+
+function renderRegionBreakdown() {
+    const regionData = computeFilteredRegion();
+    if (breakdownView === 'bars') {
+        renderBars('region-bars', regionData);
+    } else {
+        renderPie('region-pie', regionData);
     }
 }
 
@@ -674,7 +734,7 @@ async function loadLiveBreakdown() {
         document.getElementById('total-value').textContent = fmtLive;
         document.getElementById('breakdown-total').textContent = fmtLive;
 
-        renderBars('region-bars', breakdownData.by_region);
+        renderRegionBreakdown();
         renderBars('category-bars', breakdownData.by_category);
         renderHoldings(breakdownData.holdings);
 

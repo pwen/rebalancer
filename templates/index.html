@@ -110,7 +110,15 @@
                         <div id="category-pie" class="pie-container" style="display:none"></div>
                     </div>
                     <div class="breakdown-panel">
-                        <h3>By Region</h3>
+                        <div class="breakdown-panel-header">
+                            <h3>By Region</h3>
+                            <div class="region-filter-toggle">
+                                <button class="rfilt-btn" data-rfilt="all" onclick="setRegionFilter('all')">All</button>
+                                <button class="rfilt-btn active" data-rfilt="equity"
+                                    onclick="setRegionFilter('equity')">Equity
+                                    Only</button>
+                            </div>
+                        </div>
                         <div id="region-bars"></div>
                         <div id="region-pie" class="pie-container" style="display:none"></div>
                     </div>
