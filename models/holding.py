@@ -11,6 +11,7 @@ class Holding(db.Model):
     quantity = db.Column(db.Float, nullable=False)
     price = db.Column(db.Float)
     value = db.Column(db.Float, nullable=False)
+    cost_basis = db.Column(db.Float)  # total cost basis
     brokerage = db.Column(db.String(50), nullable=False)  # 'fidelity' or 'schwab'
     account = db.Column(db.String(100))
 
@@ -23,6 +24,7 @@ class Holding(db.Model):
             "quantity": self.quantity,
             "price": self.price,
             "value": self.value,
+            "cost_basis": self.cost_basis,
             "brokerage": self.brokerage,
             "account": self.account,
         }

@@ -1,6 +1,7 @@
 // ── State ────────────────────────────────────────────────
 let breakdownData = null;
 let selectedDate = '';  // '' = latest
+let liveMode = false;
 
 // ── Upload ──────────────────────────────────────────────
 async function uploadCSV(brokerage) {
@@ -50,6 +51,12 @@ async function uploadCSV(brokerage) {
 
 // ── Breakdown ───────────────────────────────────────────
 async function loadBreakdown() {
+    if (liveMode) {
+        return loadLiveBreakdown();
+    }
+
+    document.getElementById('live-banner').style.display = 'none';
+
     try {
         const params = selectedDate ? `?date=${selectedDate}` : '';
         const res = await fetch('/api/breakdown' + params);
@@ -106,17 +113,23 @@ function renderHoldings(holdings) {
     const tbody = document.getElementById('holdings-tbody');
     document.getElementById('holdings-count').textContent = holdings.length;
 
-    tbody.innerHTML = holdings.map(h => `
+    tbody.innerHTML = holdings.map(h => {
+        const price = h.price || 0;
+        const costPerShare = h.cost_per_share || 0;
+        const costBasis = h.cost_basis || 0;
+
+        return `
     <tr>
       <td class="mono"><strong>${h.ticker}</strong></td>
-      <td>${h.name || ''}</td>
+      <td class="mono">${h.quantity ? h.quantity.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 4 }) : '—'}</td>
+      <td class="mono">$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="mono">${costPerShare ? '$' + costPerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
+      <td class="mono">${costBasis ? '$' + costBasis.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}</td>
       <td class="mono">$${h.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
       <td class="mono">${h.pct.toFixed(1)}%</td>
-      <td>${h.brokerages.join(', ')}</td>
-      <td>${formatBreakdown(h.region)}</td>
-      <td>${formatBreakdown(h.category)}</td>
     </tr>
-  `).join('');
+  `;
+    }).join('');
 }
 
 function formatBreakdown(bd) {
@@ -230,7 +243,8 @@ async function saveTargets(dimension) {
 async function loadRebalance() {
     try {
         const params = selectedDate ? `?date=${selectedDate}` : '';
-        const res = await fetch('/api/rebalance' + params);
+        const endpoint = liveMode ? '/api/live-rebalance' : '/api/rebalance';
+        const res = await fetch(endpoint + params);
         const data = await res.json();
 
         if (data.error) {
@@ -377,6 +391,55 @@ async function deleteSnapshot(id) {
 function onSnapshotChange() {
     selectedDate = document.getElementById('snapshot-select').value;
     loadBreakdown();
+}
+
+// ── Live View ───────────────────────────────────────────
+async function toggleLiveView() {
+    liveMode = document.getElementById('live-toggle').checked;
+    await loadBreakdown();
+}
+
+async function loadLiveBreakdown() {
+    const banner = document.getElementById('live-banner');
+    banner.style.display = '';
+    banner.innerHTML = '<span class="loading">📡 Fetching live prices…</span>';
+
+    try {
+        const params = selectedDate ? `?date=${selectedDate}` : '';
+        const res = await fetch('/api/live-breakdown' + params);
+        breakdownData = await res.json();
+
+        if (breakdownData.error) {
+            banner.innerHTML = `<span class="error">${breakdownData.error}</span>`;
+            return;
+        }
+
+        // Show change banner
+        const change = breakdownData.total_change;
+        const changePct = breakdownData.total_change_pct;
+        const sign = change >= 0 ? '+' : '';
+        const cls = change >= 0 ? 'change-pos' : 'change-neg';
+        banner.innerHTML = `
+            <span class="${cls}">
+                ${sign}$${change.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                (${sign}${changePct.toFixed(2)}%) vs snapshot
+            </span>
+            <span class="snapshot-val">Snapshot: $${breakdownData.snapshot_total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        `;
+
+        // Render same as normal breakdown
+        document.getElementById('total-value').textContent =
+            '$' + breakdownData.total_value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' (live)';
+
+        renderBars('region-bars', breakdownData.by_region);
+        renderBars('category-bars', breakdownData.by_category);
+        renderHoldings(breakdownData.holdings);
+
+        await loadTargets();
+    } catch (err) {
+        banner.innerHTML = `<span class="error">Failed to fetch live prices: ${err.message}</span>`;
+        console.error('Live breakdown error:', err);
+    }
 }
 
 // ── Init ────────────────────────────────────────────────

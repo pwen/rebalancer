@@ -12,6 +12,7 @@ from parsers.fidelity import parse_fidelity_csv
 from parsers.schwab import parse_schwab_csv
 from services.classifier import classify_tickers, reclassify_ticker, VALID_CATEGORIES, VALID_REGIONS
 from services.rebalancer import compute_breakdown, suggest_trades
+from services.prices import fetch_live_prices, apply_live_prices
 
 app = Flask(__name__)
 
@@ -96,6 +97,7 @@ def upload_csv():
             quantity=h["quantity"],
             price=h["price"],
             value=h["value"],
+            cost_basis=h.get("cost_basis"),
             brokerage=h["brokerage"],
             account=h["account"],
         )
@@ -313,6 +315,114 @@ def get_rebalance():
         return jsonify({"error": "No holdings uploaded yet"}), 400
 
     breakdown = compute_breakdown(holdings)
+    trades = suggest_trades(breakdown)
+    return jsonify(trades)
+
+
+# ── Live Prices ──────────────────────────────────────────────────────────
+
+@app.route("/api/live-prices")
+def get_live_prices():
+    """Fetch live prices for holdings in the latest (or specified) snapshot."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
+
+    if not holdings:
+        return jsonify({"error": "No holdings found"}), 400
+
+    tickers = list({h.ticker for h in holdings})
+    live_prices = fetch_live_prices(tickers)
+    updated = apply_live_prices(holdings, live_prices)
+
+    snapshot_total = sum(h.value for h in holdings)
+    live_total = sum(u["live_value"] for u in updated)
+
+    return jsonify({
+        "snapshot_total": round(snapshot_total, 2),
+        "live_total": round(live_total, 2),
+        "total_change": round(live_total - snapshot_total, 2),
+        "total_change_pct": round((live_total - snapshot_total) / snapshot_total * 100, 2) if snapshot_total else 0,
+        "holdings": sorted(updated, key=lambda x: x["live_value"], reverse=True),
+    })
+
+
+@app.route("/api/live-breakdown")
+def get_live_breakdown():
+    """Compute breakdown using live prices instead of snapshot prices."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
+
+    if not holdings:
+        return jsonify({"error": "No holdings found"}), 400
+
+    tickers = list({h.ticker for h in holdings})
+    live_prices = fetch_live_prices(tickers)
+
+    # Create virtual holdings with live prices
+    virtual_holdings = []
+    for h in holdings:
+        live_price = live_prices.get(h.ticker)
+        virtual = Holding(
+            ticker=h.ticker,
+            name=h.name,
+            quantity=h.quantity,
+            price=live_price if live_price else h.price,
+            value=round(h.quantity * live_price, 2) if live_price and h.quantity else h.value,
+            brokerage=h.brokerage,
+            account=h.account,
+        )
+        virtual_holdings.append(virtual)
+
+    breakdown = compute_breakdown(virtual_holdings)
+
+    # Add snapshot comparison
+    snapshot_total = sum(h.value for h in holdings)
+    breakdown["snapshot_total"] = round(snapshot_total, 2)
+    breakdown["total_change"] = round(breakdown["total_value"] - snapshot_total, 2)
+    breakdown["total_change_pct"] = (
+        round((breakdown["total_value"] - snapshot_total) / snapshot_total * 100, 2)
+        if snapshot_total else 0
+    )
+
+    return jsonify(breakdown)
+
+
+@app.route("/api/live-rebalance")
+def get_live_rebalance():
+    """Compute rebalancing recommendations using live prices."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
+
+    if not holdings:
+        return jsonify({"error": "No holdings found"}), 400
+
+    tickers = list({h.ticker for h in holdings})
+    live_prices = fetch_live_prices(tickers)
+
+    virtual_holdings = []
+    for h in holdings:
+        live_price = live_prices.get(h.ticker)
+        virtual = Holding(
+            ticker=h.ticker,
+            name=h.name,
+            quantity=h.quantity,
+            price=live_price if live_price else h.price,
+            value=round(h.quantity * live_price, 2) if live_price and h.quantity else h.value,
+            brokerage=h.brokerage,
+            account=h.account,
+        )
+        virtual_holdings.append(virtual)
+
+    breakdown = compute_breakdown(virtual_holdings)
     trades = suggest_trades(breakdown)
     return jsonify(trades)
 

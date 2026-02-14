@@ -36,8 +36,10 @@ def parse_fidelity_csv(file_content: str) -> list[dict]:
         if not ticker or ticker.startswith("***"):
             continue
 
-        # Skip cash / pending activity rows
-        if ticker.upper() in ("CASH", "PENDING ACTIVITY", "FCASH", "SPAXX", "FDRXX", "CORE"):
+        # Skip non-position rows
+        if ticker.upper() in ("CASH", "PENDING ACTIVITY", "CORE"):
+            continue
+        if "pending" in ticker.lower():
             continue
 
         name = (row.get("Description") or row.get("Security Description") or "").strip()
@@ -49,6 +51,10 @@ def parse_fidelity_csv(file_content: str) -> list[dict]:
         if value == 0 and quantity == 0:
             continue
 
+        cost_basis = _parse_number(
+            row.get("Cost Basis Total") or row.get("Cost Basis") or "0"
+        )
+
         account = (row.get("Account Name") or row.get("Account Number") or "").strip()
 
         holdings.append(
@@ -58,6 +64,7 @@ def parse_fidelity_csv(file_content: str) -> list[dict]:
                 "quantity": quantity,
                 "price": price,
                 "value": value,
+                "cost_basis": cost_basis,
                 "brokerage": "fidelity",
                 "account": account,
             }

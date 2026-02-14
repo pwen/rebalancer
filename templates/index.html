@@ -56,8 +56,15 @@
         <section class="card" id="breakdown-section" style="display:none">
             <div class="section-header">
                 <h2>📊 Portfolio Breakdown</h2>
-                <span id="total-value" class="total-value"></span>
+                <div class="header-controls">
+                    <label class="live-toggle" title="Use live market prices instead of snapshot prices">
+                        <input type="checkbox" id="live-toggle" onchange="toggleLiveView()" />
+                        <span class="toggle-label">📡 Live Prices</span>
+                    </label>
+                    <span id="total-value" class="total-value"></span>
+                </div>
             </div>
+            <div id="live-banner" class="live-banner" style="display:none"></div>
 
             <div class="breakdown-grid">
                 <div class="breakdown-panel">
@@ -75,13 +82,13 @@
                 <table class="holdings-table">
                     <thead>
                         <tr>
-                            <th>Ticker</th>
-                            <th>Name</th>
-                            <th>Value</th>
-                            <th>%</th>
-                            <th>Brokerages</th>
-                            <th>Region</th>
-                            <th>Category</th>
+                            <th>Symbol</th>
+                            <th>Shares</th>
+                            <th>Last Price</th>
+                            <th>AC/Share</th>
+                            <th>Total Cost</th>
+                            <th>Mkt Value</th>
+                            <th>% Acct</th>
                         </tr>
                     </thead>
                     <tbody id="holdings-tbody"></tbody>

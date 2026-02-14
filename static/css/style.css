@@ -384,3 +384,48 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   color: var(--red);
   background: rgba(248, 113, 113, 0.1);
 }
+
+/* ── Live View ──────────────────────────────────────────── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.live-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.live-toggle:hover { color: var(--text); }
+.live-toggle input[type="checkbox"] {
+  accent-color: var(--green);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.live-toggle:has(input:checked) .toggle-label {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.live-banner {
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.live-banner .change-pos { color: var(--green); font-weight: 600; }
+.live-banner .change-neg { color: var(--red); font-weight: 600; }
+.live-banner .snapshot-val { color: var(--text-dim); }
+.live-banner .loading { color: var(--yellow); }
+.live-banner .error { color: var(--red); }

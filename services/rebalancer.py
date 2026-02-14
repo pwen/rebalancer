@@ -52,10 +52,12 @@ def compute_breakdown(holdings: list[Holding]) -> dict:
                 "name": h.name,
                 "value": 0,
                 "quantity": 0,
+                "cost_basis": 0,
                 "brokerages": set(),
             }
         ticker_values[h.ticker]["value"] += h.value
         ticker_values[h.ticker]["quantity"] += h.quantity
+        ticker_values[h.ticker]["cost_basis"] += (h.cost_basis or 0)
         ticker_values[h.ticker]["brokerages"].add(h.brokerage)
 
     for ticker, info in ticker_values.items():
@@ -84,6 +86,9 @@ def compute_breakdown(holdings: list[Holding]) -> dict:
                 "value": round(value, 2),
                 "pct": round(value / total_value * 100, 2),
                 "quantity": info["quantity"],
+                "price": round(value / info["quantity"], 4) if info["quantity"] else 0,
+                "cost_basis": round(info["cost_basis"], 2),
+                "cost_per_share": round(info["cost_basis"] / info["quantity"], 4) if info["quantity"] and info["cost_basis"] else 0,
                 "brokerages": sorted(info["brokerages"]),
                 "region": region_bd,
                 "category": category_bd,

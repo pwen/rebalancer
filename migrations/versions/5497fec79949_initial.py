@@ -36,6 +36,7 @@ def upgrade():
     sa.Column('quantity', sa.Float(), nullable=False),
     sa.Column('price', sa.Float(), nullable=True),
     sa.Column('value', sa.Float(), nullable=False),
+    sa.Column('cost_basis', sa.Float(), nullable=True),
     sa.Column('brokerage', sa.String(length=50), nullable=False),
     sa.Column('account', sa.String(length=100), nullable=True),
     sa.ForeignKeyConstraint(['snapshot_id'], ['snapshots.id'], ),

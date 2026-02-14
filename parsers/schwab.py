@@ -45,12 +45,11 @@ def parse_schwab_csv(file_content: str) -> list[dict]:
         if not ticker:
             continue
 
-        # Skip totals, cash, and summary rows
+        # Skip totals and summary rows (keep SWVXX — it's a money market fund)
         if ticker.upper() in (
             "ACCOUNT TOTAL",
             "CASH & CASH INVESTMENTS",
             "CASH",
-            "SWVXX",
         ):
             continue
         if "total" in ticker.lower():
@@ -66,6 +65,10 @@ def parse_schwab_csv(file_content: str) -> list[dict]:
             or row.get("Current Value") or "0"
         )
 
+        cost_basis = _parse_number(
+            row.get("Cost Basis") or row.get("Cost Basis Total") or "0"
+        )
+
         if value == 0 and quantity == 0:
             continue
 
@@ -76,6 +79,7 @@ def parse_schwab_csv(file_content: str) -> list[dict]:
                 "quantity": quantity,
                 "price": price,
                 "value": value,
+                "cost_basis": cost_basis,
                 "brokerage": "schwab",
                 "account": account,
             }
