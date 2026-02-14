@@ -32,12 +32,12 @@ def parse_fidelity_csv(file_content: str) -> list[dict]:
     reader = csv.DictReader(io.StringIO(csv_text))
 
     for row in reader:
-        ticker = (row.get("Symbol") or "").strip()
+        ticker = (row.get("Symbol") or "").strip().strip("*")
         if not ticker or ticker.startswith("***"):
             continue
 
         # Skip cash / pending activity rows
-        if ticker.upper() in ("CASH", "PENDING ACTIVITY", "FCASH", "SPAXX", "FDRXX"):
+        if ticker.upper() in ("CASH", "PENDING ACTIVITY", "FCASH", "SPAXX", "FDRXX", "CORE"):
             continue
 
         name = (row.get("Description") or row.get("Security Description") or "").strip()

@@ -56,11 +56,14 @@ def parse_schwab_csv(file_content: str) -> list[dict]:
         if "total" in ticker.lower():
             continue
 
-        name = (row.get("Name") or row.get("Description") or "").strip().strip('"')
-        quantity = _parse_number(row.get("Quantity") or row.get("Shares") or "0")
+        name = (row.get("Description") or row.get("Name") or "").strip().strip('"')
+        quantity = _parse_number(
+            row.get("Qty (Quantity)") or row.get("Quantity") or row.get("Shares") or "0"
+        )
         price = _parse_number(row.get("Price") or row.get("Last Price") or "0")
         value = _parse_number(
-            row.get("Market Value") or row.get("Current Value") or "0"
+            row.get("Mkt Val (Market Value)") or row.get("Market Value")
+            or row.get("Current Value") or "0"
         )
 
         if value == 0 and quantity == 0:
