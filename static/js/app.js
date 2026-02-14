@@ -139,6 +139,9 @@ async function loadBreakdown() {
         // Holdings table
         renderHoldings(breakdownData.holdings);
 
+        // Show saved analysis if available
+        showSavedAnalysis(breakdownData);
+
         // Load targets
         await loadTargets();
     } catch (err) {
@@ -463,8 +466,9 @@ function renderTargets(dimension, savedTargets) {
     const container = document.getElementById(`${dimension}-targets`);
     const source = breakdownData[`by_${dimension}`];
 
-    // Get all labels from both current breakdown and saved targets
-    const labels = [...new Set([...Object.keys(source), ...Object.keys(savedTargets)])];
+    // Get all labels from both current breakdown and saved targets, sorted by current weight desc
+    const labels = [...new Set([...Object.keys(source), ...Object.keys(savedTargets)])]
+        .sort((a, b) => ((source[b] ? source[b].pct : 0) - (source[a] ? source[a].pct : 0)));
 
     container.innerHTML = labels.map(label => {
         const current = source[label] ? source[label].pct.toFixed(1) : '0.0';
@@ -669,7 +673,10 @@ function renderSnapshotList(snapshots) {
                 <td>${s.holding_count}</td>
                 <td class="mono">$${s.total_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                 <td class="filename">${s.filename || ''}</td>
-                <td><button class="btn-icon" onclick="deleteSnapshot(${s.id})" title="Delete">✕</button></td>
+                <td>
+                    <button class="btn-icon" onclick="editSnapshotDate(${s.id}, '${date}')" title="Edit date">✏</button>
+                    <button class="btn-icon" onclick="deleteSnapshot(${s.id})" title="Delete">✕</button>
+                </td>
             </tr>`;
         }
     }
@@ -687,6 +694,32 @@ async function deleteSnapshot(id) {
         await loadBreakdown();
     } catch (err) {
         console.error('Failed to delete snapshot:', err);
+    }
+}
+
+async function editSnapshotDate(id, currentDate) {
+    const newDate = prompt('Enter new date (YYYY-MM-DD):', currentDate);
+    if (!newDate || newDate === currentDate) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+        alert('Invalid date format. Use YYYY-MM-DD.');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/snapshots/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ snapshot_date: newDate }),
+        });
+        if (!res.ok) {
+            const data = await res.json();
+            alert(data.error || 'Failed to update snapshot');
+            return;
+        }
+        await loadSnapshots();
+        await loadBreakdown();
+    } catch (err) {
+        console.error('Failed to update snapshot:', err);
     }
 }
 
@@ -764,7 +797,65 @@ function getPrimaryRegion(h) {
     entries.sort((a, b) => b[1] - a[1]);
     return entries[0][1] >= 80 ? entries[0][0] : 'Mixed';
 }
+// ── AI Analysis ─────────────────────────────────────────
+function showSavedAnalysis(data) {
+    const btn = document.getElementById('analyze-btn');
+    const output = document.getElementById('analysis-output');
 
+    if (data.analysis) {
+        output.style.display = '';
+        output.innerHTML = markdownToHtml(data.analysis);
+        btn.textContent = '🔮 Regenerate Analysis';
+    } else {
+        output.style.display = 'none';
+        output.innerHTML = '';
+        btn.textContent = '🔮 Generate AI Analysis';
+    }
+}
+
+async function generateAnalysis() {
+    const btn = document.getElementById('analyze-btn');
+    const output = document.getElementById('analysis-output');
+
+    btn.disabled = true;
+    btn.textContent = '🔮 Analyzing...';
+    output.style.display = '';
+    output.innerHTML = '<p class="loading">Sending portfolio data to AI...</p>';
+
+    try {
+        const params = selectedDate ? `?date=${selectedDate}` : '';
+        const res = await fetch('/api/analyze' + params, { method: 'POST' });
+        const data = await res.json();
+
+        if (data.error) {
+            output.innerHTML = `<p class="error">${data.error}</p>`;
+        } else {
+            output.innerHTML = markdownToHtml(data.analysis);
+        }
+    } catch (err) {
+        output.innerHTML = `<p class="error">Failed: ${err.message}</p>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔮 Regenerate Analysis';
+    }
+}
+
+function markdownToHtml(md) {
+    // Simple markdown to HTML converter for our analysis output
+    let html = md
+        .replace(/^## (.+)$/gm, '<h3 class="analysis-heading">$1</h3>')
+        .replace(/^### (.+)$/gm, '<h4 class="analysis-subheading">$1</h4>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/\n/g, '<br>');
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/(<li>.*?<\/li>(<br>)?)+/g, match => {
+        const items = match.replace(/<br>/g, '');
+        return `<ul>${items}</ul>`;
+    });
+    return html;
+}
 // ── Init ────────────────────────────────────────────────
 restoreTab();
 initUploadDate();

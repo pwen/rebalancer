@@ -181,6 +181,62 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   flex-direction: column;
   gap: 1.5rem;
 }
+
+/* Analysis */
+.analysis-section {
+  margin-bottom: 1.5rem;
+}
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.analysis-output {
+  margin-top: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.analysis-output h3.analysis-heading {
+  font-size: 1rem;
+  color: var(--accent);
+  margin: 1.25rem 0 0.4rem 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.analysis-output h3.analysis-heading:first-child {
+  margin-top: 0;
+}
+.analysis-output h4.analysis-subheading {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0.75rem 0 0.3rem 0;
+}
+.analysis-output ul {
+  margin: 0.4rem 0 0.4rem 1.25rem;
+  padding: 0;
+  list-style: disc;
+}
+.analysis-output li {
+  margin-bottom: 0.2rem;
+}
+.analysis-output strong {
+  color: var(--text);
+}
+.analysis-output em {
+  color: var(--text-dim);
+}
+.analysis-output .loading {
+  color: var(--text-dim);
+  font-style: italic;
+}
+.analysis-output .error {
+  color: var(--red);
+}
 .breakdown-panel-header {
   display: flex;
   align-items: center;
@@ -209,6 +265,11 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   background: var(--accent);
   color: #fff;
 }
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+}
 .targets-grid, .rebalance-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -228,7 +289,7 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   margin-bottom: 0.5rem;
 }
 .bar-label {
-  width: 70px;
+  width: 120px;
   font-size: 0.8rem;
   font-weight: 600;
   text-align: right;
@@ -249,7 +310,8 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   min-width: 2px;
 }
 .bar-value {
-  width: 70px;
+  width: auto;
+  white-space: nowrap;
   font-size: 0.8rem;
   color: var(--text-dim);
   flex-shrink: 0;
@@ -540,7 +602,7 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
   body { padding: 1rem; }
-  .targets-grid, .rebalance-grid {
+  .breakdown-grid, .targets-grid, .rebalance-grid {
     grid-template-columns: 1fr;
   }
   .tab-nav { overflow-x: auto; }

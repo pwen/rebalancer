@@ -6,3 +6,4 @@ from models.snapshot import Snapshot
 from models.holding import Holding
 from models.classification import TickerClassification
 from models.target import TargetAllocation
+from models.portfolio_analysis import PortfolioAnalysis

@@ -103,13 +103,19 @@
                         <span id="breakdown-total" class="total-value"></span>
                     </div>
                 </div>
-                <div class="breakdown-stack">
-                    <div class="breakdown-panel">
+                <div class="analysis-section">
+                    <div class="analysis-header">
+                        <button onclick="generateAnalysis()" class="btn btn-accent" id="analyze-btn">🔮 Generate AI Analysis</button>
+                    </div>
+                    <div id="analysis-output" class="analysis-output" style="display:none"></div>
+                </div>
+                <div class="breakdown-grid">
+                    <div class="breakdown-panel breakdown-panel-main">
                         <h3>By Category</h3>
                         <div id="category-bars"></div>
                         <div id="category-pie" class="pie-container" style="display:none"></div>
                     </div>
-                    <div class="breakdown-panel">
+                    <div class="breakdown-panel breakdown-panel-side">
                         <div class="breakdown-panel-header">
                             <h3>By Region</h3>
                             <div class="region-filter-toggle">

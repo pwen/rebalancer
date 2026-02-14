@@ -7,11 +7,12 @@ from flask_migrate import Migrate
 
 load_dotenv()
 
-from models import db, Holding, TickerClassification, TargetAllocation, Snapshot
+from models import db, Holding, TickerClassification, TargetAllocation, Snapshot, PortfolioAnalysis
 from parsers.fidelity import parse_fidelity_csv
 from parsers.schwab import parse_schwab_csv
 from services.classifier import classify_tickers, reclassify_ticker, VALID_CATEGORIES, VALID_REGIONS
 from services.rebalancer import compute_breakdown, suggest_trades
+from services.analyzer import generate_analysis
 from services.prices import fetch_live_prices, apply_live_prices
 
 app = Flask(__name__)
@@ -109,6 +110,16 @@ def upload_csv():
     tickers_with_names = list({(h["ticker"], h["name"]) for h in parsed})
     classify_tickers(tickers_with_names)
 
+    # Auto-generate AI analysis for this snapshot date
+    try:
+        all_holdings = _get_snapshot_holdings(snapshot_date.isoformat()) or _get_latest_holdings()
+        if all_holdings:
+            breakdown = compute_breakdown(all_holdings)
+            analysis_text = generate_analysis(breakdown)
+            PortfolioAnalysis.save_for_date(snapshot_date, analysis_text)
+    except Exception as e:
+        print(f"[upload] Auto-analysis failed (non-blocking): {e}")
+
     return jsonify({
         "message": f"Imported {len(parsed)} holdings from {brokerage.title()} ({snapshot_date.isoformat()})",
         "count": len(parsed),
@@ -151,6 +162,20 @@ def _get_snapshot_holdings(snapshot_date_str):
     return holdings
 
 
+def _get_effective_date(snap_date_str=None):
+    """Return the effective snapshot date (as a date object) for analysis storage."""
+    if snap_date_str:
+        try:
+            return date.fromisoformat(snap_date_str)
+        except ValueError:
+            return None
+    # For "latest", find the most recent snapshot date
+    latest = Snapshot.query.order_by(
+        Snapshot.snapshot_date.desc(), Snapshot.id.desc()
+    ).first()
+    return latest.snapshot_date if latest else None
+
+
 @app.route("/api/snapshots")
 def list_snapshots():
     """Return all snapshots, newest first."""
@@ -167,6 +192,20 @@ def delete_snapshot(snapshot_id):
     db.session.delete(snapshot)
     db.session.commit()
     return jsonify({"message": "Snapshot deleted"})
+
+
+@app.route("/api/snapshots/<int:snapshot_id>", methods=["PATCH"])
+def update_snapshot(snapshot_id):
+    """Update snapshot metadata (e.g. date)."""
+    snapshot = Snapshot.query.get_or_404(snapshot_id)
+    data = request.get_json()
+
+    if "snapshot_date" in data:
+        from datetime import date as date_cls
+        snapshot.snapshot_date = date_cls.fromisoformat(data["snapshot_date"])
+
+    db.session.commit()
+    return jsonify(snapshot.to_dict())
 
 
 @app.route("/api/snapshot-dates")
@@ -212,7 +251,39 @@ def get_breakdown():
     else:
         holdings = _get_latest_holdings()
     breakdown = compute_breakdown(holdings)
+
+    # Attach saved analysis if available
+    effective_date = _get_effective_date(snap_date)
+    if effective_date:
+        saved = PortfolioAnalysis.get_for_date(effective_date)
+        if saved:
+            breakdown["analysis"] = saved.analysis
+            breakdown["analysis_date"] = saved.created_at.isoformat()
+
     return jsonify(breakdown)
+
+
+@app.route("/api/analyze", methods=["POST"])
+def analyze_portfolio():
+    """Generate AI analysis of the current portfolio and persist it."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
+
+    if not holdings:
+        return jsonify({"error": "No holdings found"}), 404
+
+    breakdown = compute_breakdown(holdings)
+    analysis_text = generate_analysis(breakdown)
+
+    # Persist
+    effective_date = _get_effective_date(snap_date)
+    if effective_date:
+        PortfolioAnalysis.save_for_date(effective_date, analysis_text)
+
+    return jsonify({"analysis": analysis_text})
 
 
 # ── Classifications ──────────────────────────────────────────────────────
