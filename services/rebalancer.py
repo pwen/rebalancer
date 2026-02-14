@@ -8,6 +8,24 @@ compute the drift and recommend trades to rebalance.
 from models.holding import Holding
 from models.classification import TickerClassification
 from models.target import TargetAllocation
+from services.classifications_config import BUILTIN_MAP
+
+# Tickers we know are cash-equivalent money market funds
+_CASH_TICKERS = {"SPAXX", "FDRXX", "FCASH", "SWVXX", "FZFXX", "SPRXX"}
+
+
+def _infer_security_type(ticker: str, category_bd: dict) -> str:
+    """Derive security type from ticker and classification."""
+    # Cash equivalents
+    if ticker in _CASH_TICKERS or category_bd.get("Cash", 0) == 100:
+        return "Cash"
+    # Known ETFs from our builtin map
+    if ticker in BUILTIN_MAP:
+        return "ETF"
+    # Mutual funds: typically 5 chars ending in X
+    if len(ticker) == 5 and ticker.endswith("X"):
+        return "Mutual Fund"
+    return "Stock"
 
 
 def compute_breakdown(holdings: list[Holding]) -> dict:
@@ -90,6 +108,7 @@ def compute_breakdown(holdings: list[Holding]) -> dict:
                 "cost_basis": round(info["cost_basis"], 2),
                 "cost_per_share": round(info["cost_basis"] / info["quantity"], 4) if info["quantity"] and info["cost_basis"] else 0,
                 "brokerages": sorted(info["brokerages"]),
+                "security_type": _infer_security_type(ticker, category_bd),
                 "region": region_bd,
                 "category": category_bd,
             }

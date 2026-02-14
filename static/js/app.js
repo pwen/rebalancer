@@ -4,15 +4,47 @@ let selectedDate = '';  // '' = latest
 let liveMode = false;
 let allHoldings = [];   // cached for filtering
 let holdingsSort = { key: 'value', dir: -1 };  // default: by value desc
+let activeTab = 'holdings';
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `tab-${tab}`);
+    });
+    history.replaceState(null, '', `#${tab}`);
+}
+
+function restoreTab() {
+    const hash = location.hash.replace('#', '');
+    if (hash && document.getElementById(`tab-${hash}`)) {
+        switchTab(hash);
+    }
+}
+window.addEventListener('hashchange', () => {
+    const hash = location.hash.replace('#', '');
+    if (hash && hash !== activeTab) switchTab(hash);
+});
 
 // ── Upload ──────────────────────────────────────────────
-async function uploadCSV(brokerage) {
-    const fileInput = document.getElementById(`${brokerage}-file`);
-    const dateInput = document.getElementById(`${brokerage}-date`);
+function initUploadDate() {
+    const dateInput = document.getElementById('upload-date');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+}
+
+async function uploadCSV() {
+    const brokerage = document.getElementById('upload-brokerage').value;
+    const fileInput = document.getElementById('upload-file');
+    const dateInput = document.getElementById('upload-date');
     const statusEl = document.getElementById('upload-status');
 
     if (!fileInput.files.length) {
-        statusEl.textContent = `Please select a ${brokerage} CSV file.`;
+        statusEl.textContent = 'Please select a CSV file.';
         statusEl.className = 'status-msg error';
         return;
     }
@@ -20,9 +52,7 @@ async function uploadCSV(brokerage) {
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     formData.append('brokerage', brokerage);
-    if (dateInput.value) {
-        formData.append('snapshot_date', dateInput.value);
-    }
+    formData.append('snapshot_date', dateInput.value);
 
     statusEl.textContent = 'Uploading and classifying...';
     statusEl.className = 'status-msg';
@@ -40,11 +70,11 @@ async function uploadCSV(brokerage) {
         statusEl.textContent = data.message;
         statusEl.className = 'status-msg success';
         fileInput.value = '';
-        dateInput.value = '';
 
-        // Refresh snapshots and breakdown
+        // Refresh snapshots and breakdown, then go to holdings tab
         await loadSnapshots();
         await loadBreakdown();
+        switchTab('holdings');
     } catch (err) {
         statusEl.textContent = 'Network error: ' + err.message;
         statusEl.className = 'status-msg error';
@@ -65,19 +95,18 @@ async function loadBreakdown() {
         breakdownData = await res.json();
 
         if (breakdownData.total_value === 0) {
-            document.getElementById('breakdown-section').style.display = 'none';
-            document.getElementById('targets-section').style.display = 'none';
-            document.getElementById('rebalance-section').style.display = 'none';
+            document.getElementById('holdings-empty').style.display = '';
+            document.getElementById('breakdown-empty').style.display = '';
             return;
         }
 
-        document.getElementById('breakdown-section').style.display = '';
-        document.getElementById('targets-section').style.display = '';
-        document.getElementById('rebalance-section').style.display = '';
+        document.getElementById('holdings-empty').style.display = 'none';
+        document.getElementById('breakdown-empty').style.display = 'none';
 
         // Total value
-        document.getElementById('total-value').textContent =
-            '$' + breakdownData.total_value.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        const fmtTotal = '$' + breakdownData.total_value.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        document.getElementById('total-value').textContent = fmtTotal;
+        document.getElementById('breakdown-total').textContent = fmtTotal;
 
         // Render bars
         renderBars('region-bars', breakdownData.by_region);
@@ -157,7 +186,7 @@ function sortHoldings(key) {
         holdingsSort.dir *= -1;  // toggle direction
     } else {
         holdingsSort.key = key;
-        holdingsSort.dir = key === 'ticker' ? 1 : -1;  // alpha asc, numbers desc
+        holdingsSort.dir = (key === 'ticker' || key === 'primaryCategory' || key === 'security_type') ? 1 : -1;  // alpha asc, numbers desc
     }
     applyHoldingsFilters();
 }
@@ -182,8 +211,13 @@ function applyHoldingsFilters() {
     // Sort
     filtered = [...filtered].sort((a, b) => {
         let va, vb;
-        if (holdingsSort.key === 'ticker') {
-            va = a.ticker; vb = b.ticker;
+        if (holdingsSort.key === 'ticker' || holdingsSort.key === 'primaryCategory' || holdingsSort.key === 'security_type') {
+            va = holdingsSort.key === 'ticker' ? a.ticker
+               : holdingsSort.key === 'security_type' ? (a.security_type || '')
+               : getPrimaryCategory(a);
+            vb = holdingsSort.key === 'ticker' ? b.ticker
+               : holdingsSort.key === 'security_type' ? (b.security_type || '')
+               : getPrimaryCategory(b);
             return holdingsSort.dir * va.localeCompare(vb);
         }
         va = a[holdingsSort.key] || 0;
@@ -211,6 +245,8 @@ function applyHoldingsFilters() {
         const badges = (h.brokerages || []).map(b =>
             `<span class="badge badge-${b}">${b[0].toUpperCase()}</span>`
         ).join('');
+        const catLabel = getPrimaryCategory(h);
+        const typeLabel = h.security_type || '—';
 
         return `
     <tr>
@@ -221,6 +257,8 @@ function applyHoldingsFilters() {
       <td class="mono">${costBasis ? '$' + costBasis.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}</td>
       <td class="mono">$${h.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
       <td class="mono">${h.pct.toFixed(1)}%</td>
+      <td class="type-label type-${typeLabel.toLowerCase().replace(/\s+/g, '-')}">${typeLabel}</td>
+      <td class="cat-label">${catLabel}</td>
       <td>${badges}</td>
     </tr>
   `;
@@ -554,8 +592,9 @@ async function loadLiveBreakdown() {
         `;
 
         // Render same as normal breakdown
-        document.getElementById('total-value').textContent =
-            '$' + breakdownData.total_value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' (live)';
+        const fmtLive = '$' + breakdownData.total_value.toLocaleString(undefined, { minimumFractionDigits: 2 }) + ' (live)';
+        document.getElementById('total-value').textContent = fmtLive;
+        document.getElementById('breakdown-total').textContent = fmtLive;
 
         renderBars('region-bars', breakdownData.by_region);
         renderBars('category-bars', breakdownData.by_category);
@@ -568,6 +607,19 @@ async function loadLiveBreakdown() {
     }
 }
 
+// ── Helpers ─────────────────────────────────────────────
+function getPrimaryCategory(h) {
+    if (!h.category) return '—';
+    const entries = Object.entries(h.category);
+    if (entries.length === 0) return '—';
+    if (entries.length === 1) return entries[0][0];
+    // Return top category, or "Mixed" if top < 80%
+    entries.sort((a, b) => b[1] - a[1]);
+    return entries[0][1] >= 80 ? entries[0][0] : 'Mixed';
+}
+
 // ── Init ────────────────────────────────────────────────
+restoreTab();
+initUploadDate();
 loadSnapshots();
 loadBreakdown();
