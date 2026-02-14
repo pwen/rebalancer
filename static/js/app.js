@@ -2,6 +2,8 @@
 let breakdownData = null;
 let selectedDate = '';  // '' = latest
 let liveMode = false;
+let allHoldings = [];   // cached for filtering
+let holdingsSort = { key: 'value', dir: -1 };  // default: by value desc
 
 // ── Upload ──────────────────────────────────────────────
 async function uploadCSV(brokerage) {
@@ -110,13 +112,105 @@ function renderBars(containerId, data) {
 }
 
 function renderHoldings(holdings) {
-    const tbody = document.getElementById('holdings-tbody');
-    document.getElementById('holdings-count').textContent = holdings.length;
+    allHoldings = holdings;
+    populateFilterDropdowns(holdings);
+    applyHoldingsFilters();
+}
 
-    tbody.innerHTML = holdings.map(h => {
+function populateFilterDropdowns(holdings) {
+    // Brokerage filter
+    const brokerages = new Set();
+    const categories = new Set();
+    const regions = new Set();
+
+    holdings.forEach(h => {
+        (h.brokerages || []).forEach(b => brokerages.add(b));
+        Object.keys(h.category || {}).forEach(c => categories.add(c));
+        Object.keys(h.region || {}).forEach(r => regions.add(r));
+    });
+
+    fillSelect('filter-brokerage', sorted(brokerages));
+    fillSelect('filter-category', sorted(categories));
+    fillSelect('filter-region', sorted(regions));
+}
+
+function fillSelect(id, values) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All</option>';
+    values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+    });
+    // Restore previous selection if still valid
+    if (values.includes(current)) sel.value = current;
+}
+
+function sorted(setObj) {
+    return [...setObj].sort();
+}
+
+function sortHoldings(key) {
+    if (holdingsSort.key === key) {
+        holdingsSort.dir *= -1;  // toggle direction
+    } else {
+        holdingsSort.key = key;
+        holdingsSort.dir = key === 'ticker' ? 1 : -1;  // alpha asc, numbers desc
+    }
+    applyHoldingsFilters();
+}
+
+function applyHoldingsFilters() {
+    const brokerage = document.getElementById('filter-brokerage').value;
+    const category = document.getElementById('filter-category').value;
+    const region = document.getElementById('filter-region').value;
+
+    let filtered = allHoldings;
+
+    if (brokerage) {
+        filtered = filtered.filter(h => (h.brokerages || []).includes(brokerage));
+    }
+    if (category) {
+        filtered = filtered.filter(h => h.category && h.category[category]);
+    }
+    if (region) {
+        filtered = filtered.filter(h => h.region && h.region[region]);
+    }
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => {
+        let va, vb;
+        if (holdingsSort.key === 'ticker') {
+            va = a.ticker; vb = b.ticker;
+            return holdingsSort.dir * va.localeCompare(vb);
+        }
+        va = a[holdingsSort.key] || 0;
+        vb = b[holdingsSort.key] || 0;
+        return holdingsSort.dir * (va - vb);
+    });
+
+    // Update sort indicators
+    document.querySelectorAll('.holdings-table th[data-sort]').forEach(th => {
+        const arrow = th.querySelector('.sort-arrow');
+        if (th.dataset.sort === holdingsSort.key) {
+            arrow.textContent = holdingsSort.dir === 1 ? ' \u25B2' : ' \u25BC';
+        } else {
+            arrow.textContent = '';
+        }
+    });
+
+    const tbody = document.getElementById('holdings-tbody');
+    document.getElementById('holdings-count').textContent = filtered.length;
+
+    tbody.innerHTML = filtered.map(h => {
         const price = h.price || 0;
         const costPerShare = h.cost_per_share || 0;
         const costBasis = h.cost_basis || 0;
+        const badges = (h.brokerages || []).map(b =>
+            `<span class="badge badge-${b}">${b[0].toUpperCase()}</span>`
+        ).join('');
 
         return `
     <tr>
@@ -127,9 +221,41 @@ function renderHoldings(holdings) {
       <td class="mono">${costBasis ? '$' + costBasis.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '—'}</td>
       <td class="mono">$${h.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
       <td class="mono">${h.pct.toFixed(1)}%</td>
+      <td>${badges}</td>
     </tr>
   `;
     }).join('');
+
+    // Filter summary
+    updateFilterSummary(filtered, brokerage, category, region);
+}
+
+function updateFilterSummary(filtered, brokerage, category, region) {
+    const summaryEl = document.getElementById('filter-summary');
+    const anyFilter = brokerage || category || region;
+
+    if (!anyFilter) {
+        summaryEl.style.display = 'none';
+        return;
+    }
+
+    const totalValue = breakdownData ? breakdownData.total_value : 0;
+    const filteredValue = filtered.reduce((sum, h) => sum + h.value, 0);
+    const filteredPct = totalValue ? (filteredValue / totalValue * 100) : 0;
+
+    const parts = [];
+    if (brokerage) parts.push(brokerage.charAt(0).toUpperCase() + brokerage.slice(1));
+    if (category) parts.push(category);
+    if (region) parts.push(region);
+    const label = parts.join(' + ');
+
+    summaryEl.style.display = '';
+    summaryEl.innerHTML = `
+        <strong>${label}:</strong>
+        ${filtered.length} holdings ·
+        $${filteredValue.toLocaleString(undefined, { minimumFractionDigits: 2 })} ·
+        <strong>${filteredPct.toFixed(1)}%</strong> of portfolio
+    `;
 }
 
 function formatBreakdown(bd) {

@@ -77,18 +77,42 @@
                 </div>
             </div>
 
-            <details class="holdings-details">
+            <details class="holdings-details" open>
                 <summary>View All Holdings (<span id="holdings-count">0</span>)</summary>
+
+                <div class="holdings-filters">
+                    <div class="filter-group">
+                        <label>Brokerage</label>
+                        <select id="filter-brokerage" onchange="applyHoldingsFilters()">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Category</label>
+                        <select id="filter-category" onchange="applyHoldingsFilters()">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Region</label>
+                        <select id="filter-region" onchange="applyHoldingsFilters()">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="filter-summary" id="filter-summary"></div>
+                </div>
+
                 <table class="holdings-table">
                     <thead>
                         <tr>
-                            <th>Symbol</th>
+                            <th class="sortable" data-sort="ticker" onclick="sortHoldings('ticker')">Symbol<span class="sort-arrow"></span></th>
                             <th>Shares</th>
                             <th>Last Price</th>
                             <th>AC/Share</th>
                             <th>Total Cost</th>
-                            <th>Mkt Value</th>
-                            <th>% Acct</th>
+                            <th class="sortable" data-sort="value" onclick="sortHoldings('value')">Mkt Value<span class="sort-arrow"> ▼</span></th>
+                            <th class="sortable" data-sort="pct" onclick="sortHoldings('pct')">% Acct<span class="sort-arrow"></span></th>
+                            <th>Brokerage</th>
                         </tr>
                     </thead>
                     <tbody id="holdings-tbody"></tbody>
