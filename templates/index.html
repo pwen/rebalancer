@@ -14,31 +14,43 @@
 
 <body>
     <main>
-        <!-- ── Top-level Section Toggle ───────────────────────── -->
-        <nav class="top-nav">
-            <button class="top-nav-btn active" data-section="personal"
-                onclick="switchSection('personal')">Personal</button>
-            <button class="top-nav-btn" data-section="world" onclick="switchSection('world')">The World</button>
-        </nav>
-
-        <!-- ── Personal Section ───────────────────────────────── -->
-        <div id="section-personal" class="section-content active">
-
-            <!-- ── Tab Navigation ──────────────────────────────────── -->
-            <nav class="tab-nav">
-                <button class="tab-btn active" data-tab="holdings" onclick="switchTab('holdings')">All Holdings</button>
-                <button class="tab-btn" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
-                <button class="tab-btn" data-tab="targets" onclick="switchTab('targets')">Targets & Rebalance</button>
-                <button class="tab-btn" data-tab="trends" onclick="switchTab('trends')">Trends</button>
-                <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload & Snapshots</button>
-                <div class="tab-nav-spacer"></div>
+        <!-- ── Unified Header Bar ─────────────────────────────── -->
+        <header class="site-header">
+            <div class="header-row-top">
+                <div class="header-title-group">
+                    <button class="header-title active" data-section="personal"
+                        onclick="switchSection('personal')">PERSONAL</button>
+                    <button class="header-title" data-section="world" onclick="switchSection('world')">THE
+                        WORLD</button>
+                </div>
+            </div>
+            <div class="header-row-tabs">
+                <nav class="header-tabs" id="personal-tabs">
+                    <button class="header-tab active" data-tab="holdings"
+                        onclick="switchTab('holdings')">Holdings</button>
+                    <button class="header-tab" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
+                    <button class="header-tab" data-tab="targets" onclick="switchTab('targets')">Targets</button>
+                    <button class="header-tab" data-tab="trends" onclick="switchTab('trends')">Trends</button>
+                    <button class="header-tab" data-tab="upload" onclick="switchTab('upload')">Upload</button>
+                </nav>
+                <nav class="header-tabs" id="world-tabs" style="display:none">
+                    <button class="header-tab active" data-wtab="dashboard"
+                        onclick="switchWorldTab('dashboard')">Dashboard</button>
+                    <button class="header-tab" data-wtab="calendar"
+                        onclick="switchWorldTab('calendar')">Calendar</button>
+                </nav>
+                <div class="header-spacer"></div>
                 <div class="snapshot-selector">
                     <label>📅</label>
                     <select id="snapshot-select" onchange="onSnapshotChange()">
                         <option value="">Latest</option>
                     </select>
                 </div>
-            </nav>
+            </div>
+        </header>
+
+        <!-- ── Personal Section ───────────────────────────────── -->
+        <div id="section-personal" class="section-content active">
 
             <!-- ── Tab 1: All Holdings ─────────────────────────────── -->
             <div class="tab-panel active" id="tab-holdings">
@@ -246,9 +258,18 @@
 
         <!-- ── The World Section ─────────────────────────────── -->
         <div id="section-world" class="section-content">
-            <section class="card">
-                <p class="coming-soon">Coming soon — macro benchmarks, rates, and market indicators.</p>
-            </section>
+
+            <div id="wtab-dashboard" class="world-tab-panel active">
+                <section class="card">
+                    <p class="coming-soon">Coming soon — macro benchmarks, rates, and market indicators.</p>
+                </section>
+            </div>
+
+            <div id="wtab-calendar" class="world-tab-panel">
+                <section class="card">
+                    <p class="coming-soon">Coming soon — economic calendar and earnings dates.</p>
+                </section>
+            </div>
         </div>
     </main>
 

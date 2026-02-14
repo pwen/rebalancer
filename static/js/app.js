@@ -27,36 +27,69 @@ const PIE_COLORS = {
 
 // ── Top-level sections ───────────────────────────────────
 function switchSection(section) {
-    document.querySelectorAll('.top-nav-btn').forEach(btn => {
+    document.querySelectorAll('.header-title').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === section);
     });
     document.querySelectorAll('.section-content').forEach(el => {
         el.classList.toggle('active', el.id === `section-${section}`);
     });
+    document.getElementById('personal-tabs').style.display = section === 'personal' ? '' : 'none';
+    document.getElementById('world-tabs').style.display = section === 'world' ? '' : 'none';
+    if (section === 'world') {
+        const activeWtab = document.querySelector('#world-tabs .header-tab.active');
+        const wtab = activeWtab ? activeWtab.dataset.wtab : 'dashboard';
+        history.replaceState(null, '', `#world/${wtab}`);
+    } else {
+        history.replaceState(null, '', `#personal/${activeTab}`);
+    }
+}
+
+function switchWorldTab(tab) {
+    document.querySelectorAll('#world-tabs .header-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.wtab === tab);
+    });
+    document.querySelectorAll('.world-tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === `wtab-${tab}`);
+    });
+    history.replaceState(null, '', `#world/${tab}`);
 }
 
 // ── Tabs ─────────────────────────────────────────────────
 function switchTab(tab) {
     activeTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('#personal-tabs .header-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
     });
     document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === `tab-${tab}`);
     });
-    history.replaceState(null, '', `#${tab}`);
+    history.replaceState(null, '', `#personal/${tab}`);
     if (tab === 'trends') loadTrends();
 }
 
 function restoreTab() {
     const hash = location.hash.replace('#', '');
-    if (hash && document.getElementById(`tab-${hash}`)) {
-        switchTab(hash);
+    if (hash.startsWith('world/')) {
+        const wtab = hash.replace('world/', '');
+        switchSection('world');
+        if (document.getElementById(`wtab-${wtab}`)) switchWorldTab(wtab);
+    } else if (hash.startsWith('personal/')) {
+        const ptab = hash.replace('personal/', '');
+        switchSection('personal');
+        if (document.getElementById(`tab-${ptab}`)) switchTab(ptab);
     }
 }
 window.addEventListener('hashchange', () => {
     const hash = location.hash.replace('#', '');
-    if (hash && hash !== activeTab) switchTab(hash);
+    if (hash.startsWith('world/')) {
+        const wtab = hash.replace('world/', '');
+        switchSection('world');
+        if (document.getElementById(`wtab-${wtab}`)) switchWorldTab(wtab);
+    } else if (hash.startsWith('personal/')) {
+        const ptab = hash.replace('personal/', '');
+        switchSection('personal');
+        if (ptab !== activeTab && document.getElementById(`tab-${ptab}`)) switchTab(ptab);
+    }
 });
 
 // ── Upload ──────────────────────────────────────────────
