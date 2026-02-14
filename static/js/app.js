@@ -1,9 +1,11 @@
 // ── State ────────────────────────────────────────────────
 let breakdownData = null;
+let selectedDate = '';  // '' = latest
 
 // ── Upload ──────────────────────────────────────────────
 async function uploadCSV(brokerage) {
     const fileInput = document.getElementById(`${brokerage}-file`);
+    const dateInput = document.getElementById(`${brokerage}-date`);
     const statusEl = document.getElementById('upload-status');
 
     if (!fileInput.files.length) {
@@ -15,6 +17,9 @@ async function uploadCSV(brokerage) {
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     formData.append('brokerage', brokerage);
+    if (dateInput.value) {
+        formData.append('snapshot_date', dateInput.value);
+    }
 
     statusEl.textContent = 'Uploading and classifying...';
     statusEl.className = 'status-msg';
@@ -32,8 +37,10 @@ async function uploadCSV(brokerage) {
         statusEl.textContent = data.message;
         statusEl.className = 'status-msg success';
         fileInput.value = '';
+        dateInput.value = '';
 
-        // Refresh breakdown
+        // Refresh snapshots and breakdown
+        await loadSnapshots();
         await loadBreakdown();
     } catch (err) {
         statusEl.textContent = 'Network error: ' + err.message;
@@ -44,7 +51,8 @@ async function uploadCSV(brokerage) {
 // ── Breakdown ───────────────────────────────────────────
 async function loadBreakdown() {
     try {
-        const res = await fetch('/api/breakdown');
+        const params = selectedDate ? `?date=${selectedDate}` : '';
+        const res = await fetch('/api/breakdown' + params);
         breakdownData = await res.json();
 
         if (breakdownData.total_value === 0) {
@@ -221,7 +229,8 @@ async function saveTargets(dimension) {
 // ── Rebalance ───────────────────────────────────────────
 async function loadRebalance() {
     try {
-        const res = await fetch('/api/rebalance');
+        const params = selectedDate ? `?date=${selectedDate}` : '';
+        const res = await fetch('/api/rebalance' + params);
         const data = await res.json();
 
         if (data.error) {
@@ -278,5 +287,98 @@ function renderRebalanceTable(tableId, items) {
   `;
 }
 
+// ── Snapshots ───────────────────────────────────────────
+async function loadSnapshots() {
+    try {
+        const res = await fetch('/api/snapshots');
+        const snapshots = await res.json();
+
+        // Populate date selector
+        const select = document.getElementById('snapshot-select');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">Latest</option>';
+
+        // Group by date
+        const dateSet = new Set();
+        snapshots.forEach(s => dateSet.add(s.snapshot_date));
+        for (const d of dateSet) {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            select.appendChild(opt);
+        }
+        select.value = currentVal || '';
+
+        // Render snapshot history
+        renderSnapshotList(snapshots);
+    } catch (err) {
+        console.error('Failed to load snapshots:', err);
+    }
+}
+
+function renderSnapshotList(snapshots) {
+    const container = document.getElementById('snapshot-list');
+
+    if (!snapshots.length) {
+        container.innerHTML = '<p class="empty-msg">No snapshots yet — upload a CSV to get started.</p>';
+        return;
+    }
+
+    // Group by date
+    const grouped = {};
+    snapshots.forEach(s => {
+        if (!grouped[s.snapshot_date]) grouped[s.snapshot_date] = [];
+        grouped[s.snapshot_date].push(s);
+    });
+
+    let html = '<table class="snapshot-table"><thead><tr>' +
+        '<th>Date</th><th>Brokerage</th><th>Holdings</th><th>Value</th><th>File</th><th></th>' +
+        '</tr></thead><tbody>';
+
+    for (const [date, snaps] of Object.entries(grouped)) {
+        const totalValue = snaps.reduce((sum, s) => sum + s.total_value, 0);
+        const totalHoldings = snaps.reduce((sum, s) => sum + s.holding_count, 0);
+
+        // Date summary row
+        html += `<tr class="snapshot-date-row">
+            <td rowspan="${snaps.length + 1}"><strong>${date}</strong></td>
+            <td colspan="2"><em>${totalHoldings} holdings total</em></td>
+            <td><strong>$${totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></td>
+            <td colspan="2"></td>
+        </tr>`;
+
+        for (const s of snaps) {
+            html += `<tr>
+                <td class="brokerage-label ${s.brokerage}">${s.brokerage}</td>
+                <td>${s.holding_count}</td>
+                <td class="mono">$${s.total_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                <td class="filename">${s.filename || ''}</td>
+                <td><button class="btn-icon" onclick="deleteSnapshot(${s.id})" title="Delete">✕</button></td>
+            </tr>`;
+        }
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+async function deleteSnapshot(id) {
+    if (!confirm('Delete this snapshot and all its holdings?')) return;
+
+    try {
+        await fetch(`/api/snapshots/${id}`, { method: 'DELETE' });
+        await loadSnapshots();
+        await loadBreakdown();
+    } catch (err) {
+        console.error('Failed to delete snapshot:', err);
+    }
+}
+
+function onSnapshotChange() {
+    selectedDate = document.getElementById('snapshot-select').value;
+    loadBreakdown();
+}
+
 // ── Init ────────────────────────────────────────────────
+loadSnapshots();
 loadBreakdown();

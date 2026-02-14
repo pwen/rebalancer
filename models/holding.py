@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from models import db
 
 
@@ -6,6 +5,7 @@ class Holding(db.Model):
     __tablename__ = "holdings"
 
     id = db.Column(db.Integer, primary_key=True)
+    snapshot_id = db.Column(db.Integer, db.ForeignKey("snapshots.id"), nullable=False)
     ticker = db.Column(db.String(20), nullable=False)
     name = db.Column(db.String(200))
     quantity = db.Column(db.Float, nullable=False)
@@ -13,13 +13,11 @@ class Holding(db.Model):
     value = db.Column(db.Float, nullable=False)
     brokerage = db.Column(db.String(50), nullable=False)  # 'fidelity' or 'schwab'
     account = db.Column(db.String(100))
-    uploaded_at = db.Column(
-        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
-    )
 
     def to_dict(self):
         return {
             "id": self.id,
+            "snapshot_id": self.snapshot_id,
             "ticker": self.ticker,
             "name": self.name,
             "quantity": self.quantity,

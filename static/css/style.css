@@ -284,3 +284,103 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Upload date ────────────────────────────────────────── */
+.upload-date-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.upload-date-row label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.upload-date-row input[type="date"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  flex: 1;
+}
+.upload-date-row input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Snapshot selector ──────────────────────────────────── */
+#snapshot-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+#snapshot-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Snapshot table ─────────────────────────────────────── */
+.snapshot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+.snapshot-table th {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.snapshot-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.snapshot-date-row td {
+  background: var(--bg-hover);
+}
+.brokerage-label {
+  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+.brokerage-label.fidelity { color: var(--green); }
+.brokerage-label.schwab { color: var(--blue); }
+.filename {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.empty-msg {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ── Icon buttons ───────────────────────────────────────── */
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.btn-icon:hover {
+  color: var(--red);
+  background: rgba(248, 113, 113, 0.1);
+}

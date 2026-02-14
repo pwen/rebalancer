@@ -22,15 +22,34 @@
                 <div class="upload-box">
                     <label>Fidelity CSV</label>
                     <input type="file" id="fidelity-file" accept=".csv" />
+                    <div class="upload-date-row">
+                        <label>Snapshot date</label>
+                        <input type="date" id="fidelity-date" />
+                    </div>
                     <button onclick="uploadCSV('fidelity')" class="btn btn-primary">Upload Fidelity</button>
                 </div>
                 <div class="upload-box">
                     <label>Schwab CSV</label>
                     <input type="file" id="schwab-file" accept=".csv" />
+                    <div class="upload-date-row">
+                        <label>Snapshot date</label>
+                        <input type="date" id="schwab-date" />
+                    </div>
                     <button onclick="uploadCSV('schwab')" class="btn btn-primary">Upload Schwab</button>
                 </div>
             </div>
             <div id="upload-status" class="status-msg"></div>
+        </section>
+
+        <!-- ── Snapshot Selector ───────────────────────────────── -->
+        <section class="card" id="snapshot-section">
+            <div class="section-header">
+                <h2>📅 Snapshots</h2>
+                <select id="snapshot-select" onchange="onSnapshotChange()">
+                    <option value="">Latest</option>
+                </select>
+            </div>
+            <div id="snapshot-list"></div>
         </section>
 
         <!-- ── Breakdown Section ───────────────────────────────── -->

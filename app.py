@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 
 load_dotenv()
 
-from models import db, Holding, TickerClassification, TargetAllocation
+from models import db, Holding, TickerClassification, TargetAllocation, Snapshot
 from parsers.fidelity import parse_fidelity_csv
 from parsers.schwab import parse_schwab_csv
 from services.classifier import classify_tickers, reclassify_ticker
@@ -39,15 +39,25 @@ def index():
 
 @app.route("/api/upload", methods=["POST"])
 def upload_csv():
-    """Upload a CSV file from Fidelity or Schwab."""
+    """Upload a CSV file from Fidelity or Schwab as a new snapshot."""
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
     file = request.files["file"]
     brokerage = request.form.get("brokerage", "").lower()
+    snapshot_date_str = request.form.get("snapshot_date", "")
 
     if brokerage not in ("fidelity", "schwab"):
         return jsonify({"error": "Brokerage must be 'fidelity' or 'schwab'"}), 400
+
+    # Parse snapshot date or default to today
+    if snapshot_date_str:
+        try:
+            snapshot_date = date.fromisoformat(snapshot_date_str)
+        except ValueError:
+            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+    else:
+        snapshot_date = date.today()
 
     try:
         content = file.read().decode("utf-8-sig")  # handle BOM
@@ -65,12 +75,22 @@ def upload_csv():
     if not parsed:
         return jsonify({"error": "No holdings found in CSV"}), 400
 
-    # Remove existing holdings for this brokerage, then insert new
-    Holding.query.filter_by(brokerage=brokerage).delete()
+    total_value = sum(h["value"] for h in parsed)
 
-    now = datetime.now(timezone.utc)
+    # Create snapshot
+    snapshot = Snapshot(
+        snapshot_date=snapshot_date,
+        brokerage=brokerage,
+        filename=file.filename,
+        holding_count=len(parsed),
+        total_value=round(total_value, 2),
+    )
+    db.session.add(snapshot)
+    db.session.flush()  # get snapshot.id
+
     for h in parsed:
         holding = Holding(
+            snapshot_id=snapshot.id,
             ticker=h["ticker"],
             name=h["name"],
             quantity=h["quantity"],
@@ -78,7 +98,6 @@ def upload_csv():
             value=h["value"],
             brokerage=h["brokerage"],
             account=h["account"],
-            uploaded_at=now,
         )
         db.session.add(holding)
 
@@ -89,38 +108,101 @@ def upload_csv():
     classify_tickers(tickers_with_names)
 
     return jsonify({
-        "message": f"Imported {len(parsed)} holdings from {brokerage.title()}",
+        "message": f"Imported {len(parsed)} holdings from {brokerage.title()} ({snapshot_date.isoformat()})",
         "count": len(parsed),
+        "snapshot_id": snapshot.id,
     })
+
+
+# ── Snapshots ────────────────────────────────────────────────────────────
+
+def _get_latest_holdings():
+    """Get holdings from the latest snapshot of each brokerage."""
+    holdings = []
+    for brokerage in ("fidelity", "schwab"):
+        latest = (
+            Snapshot.query.filter_by(brokerage=brokerage)
+            .order_by(Snapshot.snapshot_date.desc(), Snapshot.id.desc())
+            .first()
+        )
+        if latest:
+            holdings.extend(latest.holdings)
+    return holdings
+
+
+def _get_snapshot_holdings(snapshot_date_str):
+    """Get holdings from a specific snapshot date (latest per brokerage on that date)."""
+    try:
+        snap_date = date.fromisoformat(snapshot_date_str)
+    except ValueError:
+        return []
+
+    holdings = []
+    for brokerage in ("fidelity", "schwab"):
+        snapshot = (
+            Snapshot.query.filter_by(brokerage=brokerage, snapshot_date=snap_date)
+            .order_by(Snapshot.id.desc())
+            .first()
+        )
+        if snapshot:
+            holdings.extend(snapshot.holdings)
+    return holdings
+
+
+@app.route("/api/snapshots")
+def list_snapshots():
+    """Return all snapshots, newest first."""
+    snapshots = Snapshot.query.order_by(
+        Snapshot.snapshot_date.desc(), Snapshot.id.desc()
+    ).all()
+    return jsonify([s.to_dict() for s in snapshots])
+
+
+@app.route("/api/snapshots/<int:snapshot_id>", methods=["DELETE"])
+def delete_snapshot(snapshot_id):
+    """Delete a snapshot and its holdings."""
+    snapshot = Snapshot.query.get_or_404(snapshot_id)
+    db.session.delete(snapshot)
+    db.session.commit()
+    return jsonify({"message": "Snapshot deleted"})
+
+
+@app.route("/api/snapshot-dates")
+def list_snapshot_dates():
+    """Return distinct snapshot dates for the date picker."""
+    dates = (
+        db.session.query(Snapshot.snapshot_date)
+        .distinct()
+        .order_by(Snapshot.snapshot_date.desc())
+        .all()
+    )
+    return jsonify([d[0].isoformat() for d in dates])
 
 
 # ── Holdings ─────────────────────────────────────────────────────────────
 
 @app.route("/api/holdings")
 def list_holdings():
-    """Return all holdings."""
-    holdings = Holding.query.order_by(Holding.value.desc()).all()
-    return jsonify([h.to_dict() for h in holdings])
-
-
-@app.route("/api/holdings", methods=["DELETE"])
-def clear_holdings():
-    """Clear all holdings (optionally by brokerage)."""
-    brokerage = request.args.get("brokerage")
-    if brokerage:
-        Holding.query.filter_by(brokerage=brokerage).delete()
+    """Return holdings. Use ?date=YYYY-MM-DD for a specific snapshot."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
     else:
-        Holding.query.delete()
-    db.session.commit()
-    return jsonify({"message": "Holdings cleared"})
+        holdings = _get_latest_holdings()
+    holdings.sort(key=lambda h: h.value, reverse=True)
+    return jsonify([h.to_dict() for h in holdings])
 
 
 # ── Breakdown ────────────────────────────────────────────────────────────
 
 @app.route("/api/breakdown")
 def get_breakdown():
-    """Return aggregated portfolio breakdown by region and category."""
-    holdings = Holding.query.all()
+    """Return aggregated portfolio breakdown. Use ?date=YYYY-MM-DD for a specific snapshot."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
     breakdown = compute_breakdown(holdings)
     return jsonify(breakdown)
 
@@ -214,8 +296,13 @@ def save_targets():
 
 @app.route("/api/rebalance")
 def get_rebalance():
-    """Compute rebalancing recommendations."""
-    holdings = Holding.query.all()
+    """Compute rebalancing recommendations. Use ?date=YYYY-MM-DD for a specific snapshot."""
+    snap_date = request.args.get("date")
+    if snap_date:
+        holdings = _get_snapshot_holdings(snap_date)
+    else:
+        holdings = _get_latest_holdings()
+
     if not holdings:
         return jsonify({"error": "No holdings uploaded yet"}), 400
 
