@@ -224,14 +224,17 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
   border-radius: 8px;
   border: 1px solid var(--border);
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--text);
+}
+.analysis-output br + br {
+  display: none;
 }
 .analysis-output h3.analysis-heading {
   font-size: 1.05rem;
   color: var(--accent);
-  margin: 0.75rem 0 0.25rem 0;
-  padding-bottom: 0.2rem;
+  margin: 0.4rem 0 -0.15rem 0;
+  padding-bottom: 0.1rem;
   border-bottom: 1px solid var(--border);
 }
 .analysis-output h3.analysis-heading:first-child {
@@ -752,5 +755,41 @@ header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
 .live-banner .change-pos { color: var(--green); font-weight: 600; }
 .live-banner .change-neg { color: var(--red); font-weight: 600; }
 .live-banner .snapshot-val { color: var(--text-dim); }
+
+/* ── Trends ─────────────────────────────────────────────── */
+.trends-note {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: -0.25rem 0 1rem;
+}
+.trends-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.trends-grid .trend-chart-card:first-child {
+  grid-column: 1 / -1;
+}
+.trend-chart-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+.trend-chart-card h3 {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+}
+.trend-chart-card canvas {
+  width: 100% !important;
+  height: 260px !important;
+}
+.trends-grid .trend-chart-card:first-child canvas {
+  height: 220px !important;
+}
+@media (max-width: 768px) {
+  .trends-grid { grid-template-columns: 1fr; }
+}
 .live-banner .loading { color: var(--yellow); }
 .live-banner .error { color: var(--red); }

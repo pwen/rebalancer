@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Portfolio Rebalancer</title>
     <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -20,6 +21,7 @@
             <button class="tab-btn active" data-tab="holdings" onclick="switchTab('holdings')">All Holdings</button>
             <button class="tab-btn" data-tab="breakdown" onclick="switchTab('breakdown')">Breakdown</button>
             <button class="tab-btn" data-tab="targets" onclick="switchTab('targets')">Targets & Rebalance</button>
+            <button class="tab-btn" data-tab="trends" onclick="switchTab('trends')">Trends</button>
             <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload & Snapshots</button>
             <div class="tab-nav-spacer"></div>
             <div class="snapshot-selector">
@@ -170,7 +172,31 @@
             </section>
         </div>
 
-        <!-- ── Tab 4: Upload & Snapshots ───────────────────────── -->
+        <!-- ── Tab 5: Trends ────────────────────────────────────── -->
+        <div class="tab-panel" id="tab-trends">
+            <section class="card">
+                <h2>📈 Portfolio Trends</h2>
+                <p class="trends-note" id="trends-note">Tracking changes across your snapshots over time.</p>
+                <div class="trends-grid">
+                    <div class="trend-chart-card">
+                        <h3>Total Portfolio Value</h3>
+                        <canvas id="chart-total-value"></canvas>
+                    </div>
+                    <div class="trend-chart-card">
+                        <h3>Category Allocation Over Time</h3>
+                        <canvas id="chart-category-alloc"></canvas>
+                    </div>
+                    <div class="trend-chart-card">
+                        <h3>Cash & Treasury Buffer</h3>
+                        <canvas id="chart-cash-buffer"></canvas>
+                    </div>
+                </div>
+                <p class="empty-msg" id="trends-empty" style="display:none">Need at least 2 snapshots to show trends.
+                </p>
+            </section>
+        </div>
+
+        <!-- ── Tab 5: Upload & Snapshots ───────────────────────── -->
         <div class="tab-panel" id="tab-upload">
             <section class="card upload-section">
                 <h2>📂 Upload Holdings</h2>

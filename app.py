@@ -498,6 +498,50 @@ def get_live_rebalance():
     return jsonify(trades)
 
 
+# ── Trends ───────────────────────────────────────────────────────────────
+
+BOND_CASH_CATEGORIES = {"Cash", "Short-Term Treasuries", "Long-Term Treasuries"}
+
+@app.route("/api/trends")
+def get_trends():
+    """Return time-series data across all snapshot dates for trend charts."""
+    # Get all distinct snapshot dates
+    dates = (
+        db.session.query(Snapshot.snapshot_date)
+        .distinct()
+        .order_by(Snapshot.snapshot_date.asc())
+        .all()
+    )
+
+    results = []
+    for (snap_date,) in dates:
+        holdings = _get_snapshot_holdings(snap_date.isoformat())
+        if not holdings:
+            continue
+        breakdown = compute_breakdown(holdings)
+        total = breakdown["total_value"]
+        if total == 0:
+            continue
+
+        # Category allocations as percentages
+        categories = {k: v["pct"] for k, v in breakdown["by_category"].items()}
+
+        # Cash + treasury buffer %
+        buffer_pct = sum(
+            v["pct"] for k, v in breakdown["by_category"].items()
+            if k in BOND_CASH_CATEGORIES
+        )
+
+        results.append({
+            "date": snap_date.isoformat(),
+            "total_value": round(total, 2),
+            "categories": categories,
+            "cash_buffer_pct": round(buffer_pct, 2),
+        })
+
+    return jsonify(results)
+
+
 # ── Run ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

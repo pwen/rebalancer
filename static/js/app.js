@@ -35,6 +35,7 @@ function switchTab(tab) {
         panel.classList.toggle('active', panel.id === `tab-${tab}`);
     });
     history.replaceState(null, '', `#${tab}`);
+    if (tab === 'trends') loadTrends();
 }
 
 function restoreTab() {
@@ -93,6 +94,7 @@ async function uploadCSV() {
         // Refresh snapshots and breakdown, then go to holdings tab
         await loadSnapshots();
         await loadBreakdown();
+        invalidateTrends();
         switchTab('holdings');
     } catch (err) {
         statusEl.textContent = 'Network error: ' + err.message;
@@ -857,6 +859,184 @@ function markdownToHtml(md) {
     });
     return html;
 }
+// ── Trends ──────────────────────────────────────────────
+let trendsLoaded = false;
+let trendCharts = {};  // store chart instances for cleanup
+
+async function loadTrends() {
+    if (trendsLoaded) return;
+    try {
+        const res = await fetch('/api/trends');
+        const data = await res.json();
+        if (data.length < 2) {
+            document.getElementById('trends-empty').style.display = '';
+            document.querySelector('.trends-grid').style.display = 'none';
+            document.getElementById('trends-note').style.display = 'none';
+            return;
+        }
+        renderTrendCharts(data);
+        trendsLoaded = true;
+    } catch (err) {
+        console.error('Failed to load trends:', err);
+    }
+}
+
+function renderTrendCharts(data) {
+    const labels = data.map(d => d.date);
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#e2e8f0', font: { size: 11 } } },
+        },
+        scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148,163,184,0.15)' } },
+        },
+    };
+
+    // 1. Total Portfolio Value — line chart
+    const totalValues = data.map(d => d.total_value);
+    trendCharts.totalValue = new Chart(
+        document.getElementById('chart-total-value'),
+        {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Total Value ($)',
+                    data: totalValues,
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96,165,250,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#60a5fa',
+                }],
+            },
+            options: {
+                ...chartDefaults,
+                plugins: {
+                    ...chartDefaults.plugins,
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => '$' + ctx.parsed.y.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+                        },
+                    },
+                },
+                scales: {
+                    ...chartDefaults.scales,
+                    y: {
+                        ...chartDefaults.scales.y,
+                        ticks: {
+                            ...chartDefaults.scales.y.ticks,
+                            callback: v => '$' + (v / 1000).toFixed(0) + 'k',
+                        },
+                    },
+                },
+            },
+        }
+    );
+
+    // 2. Category Allocation — stacked area chart
+    // Collect all categories that appear, sorted by latest weight
+    const allCats = new Set();
+    data.forEach(d => Object.keys(d.categories).forEach(c => allCats.add(c)));
+    const latestCats = data[data.length - 1].categories;
+    const sortedCats = [...allCats].sort((a, b) => (latestCats[b] || 0) - (latestCats[a] || 0));
+
+    const categoryDatasets = sortedCats.map(cat => ({
+        label: cat,
+        data: data.map(d => (d.categories[cat] || 0).toFixed(1)),
+        backgroundColor: PIE_COLORS[cat] || '#94a3b8',
+        borderColor: 'transparent',
+        fill: true,
+    }));
+
+    trendCharts.categoryAlloc = new Chart(
+        document.getElementById('chart-category-alloc'),
+        {
+            type: 'line',
+            data: { labels, datasets: categoryDatasets },
+            options: {
+                ...chartDefaults,
+                plugins: {
+                    ...chartDefaults.plugins,
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#e2e8f0', font: { size: 10 }, boxWidth: 12, padding: 8 },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%`,
+                        },
+                    },
+                },
+                scales: {
+                    ...chartDefaults.scales,
+                    y: {
+                        ...chartDefaults.scales.y,
+                        stacked: true,
+                        max: 100,
+                        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' },
+                    },
+                    x: { ...chartDefaults.scales.x, stacked: true },
+                },
+                elements: { line: { tension: 0.3 }, point: { radius: 0 } },
+            },
+        }
+    );
+
+    // 3. Cash & Treasury Buffer — line chart
+    const bufferValues = data.map(d => d.cash_buffer_pct);
+    trendCharts.cashBuffer = new Chart(
+        document.getElementById('chart-cash-buffer'),
+        {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Cash & Treasury Buffer',
+                    data: bufferValues,
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52,211,153,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#34d399',
+                }],
+            },
+            options: {
+                ...chartDefaults,
+                plugins: {
+                    ...chartDefaults.plugins,
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.parsed.y.toFixed(1) + '%',
+                        },
+                    },
+                },
+                scales: {
+                    ...chartDefaults.scales,
+                    y: {
+                        ...chartDefaults.scales.y,
+                        ticks: { ...chartDefaults.scales.y.ticks, callback: v => v + '%' },
+                    },
+                },
+            },
+        }
+    );
+}
+
+// Reset trends cache when new data is uploaded
+function invalidateTrends() {
+    trendsLoaded = false;
+    Object.values(trendCharts).forEach(c => c.destroy());
+    trendCharts = {};
+}
+
 // ── Init ────────────────────────────────────────────────
 restoreTab();
 initUploadDate();
