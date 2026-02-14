@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Rebalancer</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+
+<body>
+    <header>
+        <h1>⚖️ Portfolio Rebalancer</h1>
+        <p class="subtitle">Upload holdings, see your breakdown, rebalance to targets.</p>
+    </header>
+
+    <main>
+        <!-- ── Upload Section ──────────────────────────────────── -->
+        <section class="card upload-section">
+            <h2>📂 Upload Holdings</h2>
+            <div class="upload-row">
+                <div class="upload-box">
+                    <label>Fidelity CSV</label>
+                    <input type="file" id="fidelity-file" accept=".csv" />
+                    <button onclick="uploadCSV('fidelity')" class="btn btn-primary">Upload Fidelity</button>
+                </div>
+                <div class="upload-box">
+                    <label>Schwab CSV</label>
+                    <input type="file" id="schwab-file" accept=".csv" />
+                    <button onclick="uploadCSV('schwab')" class="btn btn-primary">Upload Schwab</button>
+                </div>
+            </div>
+            <div id="upload-status" class="status-msg"></div>
+        </section>
+
+        <!-- ── Breakdown Section ───────────────────────────────── -->
+        <section class="card" id="breakdown-section" style="display:none">
+            <div class="section-header">
+                <h2>📊 Portfolio Breakdown</h2>
+                <span id="total-value" class="total-value"></span>
+            </div>
+
+            <div class="breakdown-grid">
+                <div class="breakdown-panel">
+                    <h3>By Region</h3>
+                    <div id="region-bars"></div>
+                </div>
+                <div class="breakdown-panel">
+                    <h3>By Category</h3>
+                    <div id="category-bars"></div>
+                </div>
+            </div>
+
+            <details class="holdings-details">
+                <summary>View All Holdings (<span id="holdings-count">0</span>)</summary>
+                <table class="holdings-table">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Name</th>
+                            <th>Value</th>
+                            <th>%</th>
+                            <th>Brokerages</th>
+                            <th>Region</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdings-tbody"></tbody>
+                </table>
+            </details>
+        </section>
+
+        <!-- ── Targets Section ─────────────────────────────────── -->
+        <section class="card" id="targets-section" style="display:none">
+            <h2>🎯 Target Allocations</h2>
+            <div class="targets-grid">
+                <div class="targets-panel">
+                    <h3>Region Targets</h3>
+                    <div id="region-targets"></div>
+                    <div class="targets-total">Total: <span id="region-total">0</span>%</div>
+                    <button onclick="saveTargets('region')" class="btn btn-primary">Save Region Targets</button>
+                </div>
+                <div class="targets-panel">
+                    <h3>Category Targets</h3>
+                    <div id="category-targets"></div>
+                    <div class="targets-total">Total: <span id="category-total">0</span>%</div>
+                    <button onclick="saveTargets('category')" class="btn btn-primary">Save Category Targets</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Rebalance Section ───────────────────────────────── -->
+        <section class="card" id="rebalance-section" style="display:none">
+            <h2>⚖️ Rebalance Recommendations</h2>
+            <button onclick="loadRebalance()" class="btn btn-accent">Calculate Rebalance</button>
+            <div id="rebalance-summary" class="rebalance-summary"></div>
+
+            <div class="rebalance-grid">
+                <div class="rebalance-panel">
+                    <h3>By Category</h3>
+                    <table class="rebalance-table" id="category-rebalance"></table>
+                </div>
+                <div class="rebalance-panel">
+                    <h3>By Region</h3>
+                    <table class="rebalance-table" id="region-rebalance"></table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
