@@ -73,10 +73,12 @@
                                     class="sort-arrow"> ▼</span></th>
                             <th class="sortable" data-sort="pct" onclick="sortHoldings('pct')">% Acct<span
                                     class="sort-arrow"></span></th>
-                            <th class="sortable" data-sort="security_type" onclick="sortHoldings('security_type')">Type<span
-                                    class="sort-arrow"></span></th>
-                            <th class="sortable" data-sort="primaryCategory" onclick="sortHoldings('primaryCategory')">Category<span
-                                    class="sort-arrow"></span></th>
+                            <th class="sortable" data-sort="security_type" onclick="sortHoldings('security_type')">
+                                Type<span class="sort-arrow"></span></th>
+                            <th class="sortable" data-sort="primaryCategory" onclick="sortHoldings('primaryCategory')">
+                                Category<span class="sort-arrow"></span></th>
+                            <th class="sortable" data-sort="primaryRegion" onclick="sortHoldings('primaryRegion')">
+                                Region<span class="sort-arrow"></span></th>
                             <th>Brokerage</th>
                         </tr>
                     </thead>
@@ -92,16 +94,25 @@
             <section class="card" id="breakdown-section">
                 <div class="section-header">
                     <h2>📊 Portfolio Breakdown</h2>
-                    <span id="breakdown-total" class="total-value"></span>
-                </div>
-                <div class="breakdown-grid">
-                    <div class="breakdown-panel">
-                        <h3>By Region</h3>
-                        <div id="region-bars"></div>
+                    <div class="header-controls">
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="bars"
+                                onclick="setBreakdownView('bars')">Bars</button>
+                            <button class="view-btn" data-view="pie" onclick="setBreakdownView('pie')">Pie</button>
+                        </div>
+                        <span id="breakdown-total" class="total-value"></span>
                     </div>
+                </div>
+                <div class="breakdown-stack">
                     <div class="breakdown-panel">
                         <h3>By Category</h3>
                         <div id="category-bars"></div>
+                        <div id="category-pie" class="pie-container" style="display:none"></div>
+                    </div>
+                    <div class="breakdown-panel">
+                        <h3>By Region</h3>
+                        <div id="region-bars"></div>
+                        <div id="region-pie" class="pie-container" style="display:none"></div>
                     </div>
                 </div>
                 <p class="empty-msg" id="breakdown-empty" style="display:none">No data yet — upload holdings first.</p>
@@ -112,19 +123,11 @@
         <div class="tab-panel" id="tab-targets">
             <section class="card" id="targets-section">
                 <h2>🎯 Target Allocations</h2>
-                <div class="targets-grid">
-                    <div class="targets-panel">
-                        <h3>Region Targets</h3>
-                        <div id="region-targets"></div>
-                        <div class="targets-total">Total: <span id="region-total">0</span>%</div>
-                        <button onclick="saveTargets('region')" class="btn btn-primary">Save Region Targets</button>
-                    </div>
-                    <div class="targets-panel">
-                        <h3>Category Targets</h3>
-                        <div id="category-targets"></div>
-                        <div class="targets-total">Total: <span id="category-total">0</span>%</div>
-                        <button onclick="saveTargets('category')" class="btn btn-primary">Save Category Targets</button>
-                    </div>
+                <div class="targets-panel">
+                    <h3>Category Targets</h3>
+                    <div id="category-targets"></div>
+                    <div class="targets-total">Total: <span id="category-total">0</span>%</div>
+                    <button onclick="saveTargets('category')" class="btn btn-primary">Save Category Targets</button>
                 </div>
             </section>
 

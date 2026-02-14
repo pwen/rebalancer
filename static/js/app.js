@@ -5,6 +5,21 @@ let liveMode = false;
 let allHoldings = [];   // cached for filtering
 let holdingsSort = { key: 'value', dir: -1 };  // default: by value desc
 let activeTab = 'holdings';
+let breakdownView = 'bars';  // 'bars' or 'pie'
+
+// Color map matching CSS bar colors
+const PIE_COLORS = {
+    // Regions
+    US: '#60a5fa', DM: '#a78bfa', EM: '#fb923c', Global: '#fbbf24',
+    // Categories
+    Technology: '#60a5fa', Financials: '#34d399', 'Health Care': '#f87171',
+    'Consumer Discretionary': '#fb923c', 'Communication Services': '#a78bfa',
+    Industrials: '#fbbf24', 'Consumer Staples': '#2dd4bf', Energy: '#f472b6',
+    Utilities: '#38bdf8', 'Real Estate': '#e879f9', Materials: '#a3e635',
+    'Precious Metals': '#fcd34d', Commodities: '#fb7185', Cryptocurrency: '#c084fc',
+    'Short-Term Treasuries': '#6ee7b7', 'Long-Term Treasuries': '#67e8f9',
+    Cash: '#9ca3af', Other: '#94a3b8',
+};
 
 // ── Tabs ─────────────────────────────────────────────────
 function switchTab(tab) {
@@ -112,6 +127,12 @@ async function loadBreakdown() {
         renderBars('region-bars', breakdownData.by_region);
         renderBars('category-bars', breakdownData.by_category);
 
+        // Render pies if in pie view
+        if (breakdownView === 'pie') {
+            renderPie('region-pie', breakdownData.by_region);
+            renderPie('category-pie', breakdownData.by_category);
+        }
+
         // Holdings table
         renderHoldings(breakdownData.holdings);
 
@@ -126,7 +147,8 @@ function renderBars(containerId, data) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
 
-    for (const [label, info] of Object.entries(data)) {
+    const sorted = Object.entries(data).sort((a, b) => b[1].pct - a[1].pct);
+    for (const [label, info] of sorted) {
         const cssLabel = label.replace(/\s+/g, '-');
         container.innerHTML += `
       <div class="bar-row">
@@ -137,6 +159,58 @@ function renderBars(containerId, data) {
         <span class="bar-value">${info.pct.toFixed(1)}% ($${info.value.toLocaleString(undefined, { maximumFractionDigits: 0 })})</span>
       </div>
     `;
+    }
+}
+
+function renderPie(containerId, data) {
+    const container = document.getElementById(containerId);
+    const entries = Object.entries(data)
+        .filter(([, info]) => info.pct > 0)
+        .sort((a, b) => b[1].pct - a[1].pct);
+
+    // Build conic-gradient stops
+    let angle = 0;
+    const stops = [];
+    entries.forEach(([label, info]) => {
+        const color = PIE_COLORS[label] || '#94a3b8';
+        const start = angle;
+        angle += info.pct * 3.6; // pct to degrees
+        stops.push(`${color} ${start}deg ${angle}deg`);
+    });
+
+    const legendHtml = entries.map(([label, info]) => {
+        const color = PIE_COLORS[label] || '#94a3b8';
+        return `<div class="pie-legend-item">
+            <span class="pie-swatch" style="background:${color}"></span>
+            <span class="pie-legend-label">${label}</span>
+            <span class="pie-legend-value">${info.pct.toFixed(1)}%</span>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="pie-wrapper">
+            <div class="pie-chart" style="background: conic-gradient(${stops.join(', ')})"></div>
+            <div class="pie-legend">${legendHtml}</div>
+        </div>
+    `;
+}
+
+function setBreakdownView(view) {
+    breakdownView = view;
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    const showBars = view === 'bars';
+    document.getElementById('region-bars').style.display = showBars ? '' : 'none';
+    document.getElementById('category-bars').style.display = showBars ? '' : 'none';
+    document.getElementById('region-pie').style.display = showBars ? 'none' : '';
+    document.getElementById('category-pie').style.display = showBars ? 'none' : '';
+
+    // Render pies on first switch (or re-render with latest data)
+    if (!showBars && breakdownData) {
+        renderPie('region-pie', breakdownData.by_region);
+        renderPie('category-pie', breakdownData.by_category);
     }
 }
 
@@ -186,7 +260,7 @@ function sortHoldings(key) {
         holdingsSort.dir *= -1;  // toggle direction
     } else {
         holdingsSort.key = key;
-        holdingsSort.dir = (key === 'ticker' || key === 'primaryCategory' || key === 'security_type') ? 1 : -1;  // alpha asc, numbers desc
+        holdingsSort.dir = (['ticker', 'primaryCategory', 'security_type', 'primaryRegion'].includes(key)) ? 1 : -1;  // alpha asc, numbers desc
     }
     applyHoldingsFilters();
 }
@@ -211,13 +285,16 @@ function applyHoldingsFilters() {
     // Sort
     filtered = [...filtered].sort((a, b) => {
         let va, vb;
-        if (holdingsSort.key === 'ticker' || holdingsSort.key === 'primaryCategory' || holdingsSort.key === 'security_type') {
+        const stringKeys = ['ticker', 'primaryCategory', 'security_type', 'primaryRegion'];
+        if (stringKeys.includes(holdingsSort.key)) {
             va = holdingsSort.key === 'ticker' ? a.ticker
-               : holdingsSort.key === 'security_type' ? (a.security_type || '')
-               : getPrimaryCategory(a);
+                : holdingsSort.key === 'security_type' ? (a.security_type || '')
+                    : holdingsSort.key === 'primaryRegion' ? getPrimaryRegion(a)
+                        : getPrimaryCategory(a);
             vb = holdingsSort.key === 'ticker' ? b.ticker
-               : holdingsSort.key === 'security_type' ? (b.security_type || '')
-               : getPrimaryCategory(b);
+                : holdingsSort.key === 'security_type' ? (b.security_type || '')
+                    : holdingsSort.key === 'primaryRegion' ? getPrimaryRegion(b)
+                        : getPrimaryCategory(b);
             return holdingsSort.dir * va.localeCompare(vb);
         }
         va = a[holdingsSort.key] || 0;
@@ -246,6 +323,7 @@ function applyHoldingsFilters() {
             `<span class="badge badge-${b}">${b[0].toUpperCase()}</span>`
         ).join('');
         const catLabel = getPrimaryCategory(h);
+        const regionLabel = getPrimaryRegion(h);
         const typeLabel = h.security_type || '—';
 
         return `
@@ -259,6 +337,7 @@ function applyHoldingsFilters() {
       <td class="mono">${h.pct.toFixed(1)}%</td>
       <td class="type-label type-${typeLabel.toLowerCase().replace(/\s+/g, '-')}">${typeLabel}</td>
       <td class="cat-label">${catLabel}</td>
+      <td class="region-label">${regionLabel}</td>
       <td>${badges}</td>
     </tr>
   `;
@@ -314,7 +393,6 @@ async function loadTargets() {
             targetMap[t.dimension][t.label] = t.target_pct;
         }
 
-        renderTargets('region', targetMap.region || {});
         renderTargets('category', targetMap.category || {});
     } catch (err) {
         console.error('Failed to load targets:', err);
@@ -614,6 +692,15 @@ function getPrimaryCategory(h) {
     if (entries.length === 0) return '—';
     if (entries.length === 1) return entries[0][0];
     // Return top category, or "Mixed" if top < 80%
+    entries.sort((a, b) => b[1] - a[1]);
+    return entries[0][1] >= 80 ? entries[0][0] : 'Mixed';
+}
+
+function getPrimaryRegion(h) {
+    if (!h.region) return '—';
+    const entries = Object.entries(h.region);
+    if (entries.length === 0) return '—';
+    if (entries.length === 1) return entries[0][0];
     entries.sort((a, b) => b[1] - a[1]);
     return entries[0][1] >= 80 ? entries[0][0] : 'Mixed';
 }
