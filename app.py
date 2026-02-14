@@ -10,7 +10,7 @@ load_dotenv()
 from models import db, Holding, TickerClassification, TargetAllocation, Snapshot
 from parsers.fidelity import parse_fidelity_csv
 from parsers.schwab import parse_schwab_csv
-from services.classifier import classify_tickers, reclassify_ticker
+from services.classifier import classify_tickers, reclassify_ticker, VALID_CATEGORIES, VALID_REGIONS
 from services.rebalancer import compute_breakdown, suggest_trades
 
 app = Flask(__name__)
@@ -194,6 +194,12 @@ def list_holdings():
 
 
 # ── Breakdown ────────────────────────────────────────────────────────────
+
+@app.route("/api/dimensions")
+def get_dimensions():
+    """Return the valid categories and regions."""
+    return jsonify({"categories": VALID_CATEGORIES, "regions": VALID_REGIONS})
+
 
 @app.route("/api/breakdown")
 def get_breakdown():

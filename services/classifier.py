@@ -1,105 +1,84 @@
 """
-AI-powered ticker classifier using OpenAI.
+Ticker classifier.
 
-Given a list of tickers, classifies each by:
-  - Region breakdown: US, Developed Markets (DM), Emerging Markets (EM)
-  - Category breakdown: Equities, Fixed Income, Metals, Commodities, Crypto,
-                        Real Estate, Cash, etc.
+Classification priority:
+  1. DB cache  — already classified, skip
+  2. BUILTIN_MAP — curated ETF/fund mappings (source="builtin")
+  3. Perplexity AI — only for unknown tickers (source="ai")
+  4. Fallback — defaults to US / Other (source="fallback")
 
-Results are cached in the TickerClassification table.
+Categories, regions, ETF mappings, and the AI prompt are in
+services/classifications_config.py.
 """
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 
 from openai import OpenAI
 
 from models import db
 from models.classification import TickerClassification
-
-CLASSIFICATION_PROMPT = """You are a financial data expert. For each investment ticker below, provide:
-1. **Region breakdown** (percentages summing to 100):
-   - US: United States equities/bonds
-   - DM: Developed Markets ex-US (Europe, Japan, Australia, Canada, etc.)
-   - EM: Emerging Markets (China, India, Brazil, etc.)
-   - Global: Cannot be attributed to a single region (e.g., commodities, gold)
-
-2. **Category breakdown** (percentages summing to 100):
-   - Equities
-   - Fixed Income
-   - Metals (gold, silver, etc.)
-   - Commodities (oil, agriculture, broad commodities)
-   - Crypto
-   - Real Estate (REITs)
-   - Cash
-
-For ETFs, base the breakdown on their underlying holdings composition.
-For individual stocks, classify by the company's primary market and sector.
-
-Return ONLY valid JSON — no markdown, no explanation. Format:
-{
-  "TICKER": {
-    "region": {"US": 60, "DM": 30, "EM": 10},
-    "category": {"Equities": 100}
-  }
-}
-
-Tickers to classify:
-"""
+from services.classifications_config import (
+    BUILTIN_MAP,
+    CLASSIFICATION_PROMPT,
+    VALID_CATEGORIES,
+    VALID_REGIONS,
+)
 
 
 def classify_tickers(tickers_with_names: list[tuple[str, str]]) -> dict:
     """
-    Classify a batch of tickers using OpenAI.
+    Classify tickers. Uses DB cache → builtin map → AI → fallback.
 
     Args:
         tickers_with_names: list of (ticker, name) tuples
 
     Returns:
-        dict mapping ticker -> {"region": {...}, "category": {...}}
+        dict mapping ticker -> {"region": {...}, "category": {...}, "source": ...}
     """
     if not tickers_with_names:
         return {}
 
-    # Check which tickers already have classifications
     tickers = [t for t, _ in tickers_with_names]
+
+    # 1) Check DB cache
     existing = TickerClassification.query.filter(
         TickerClassification.ticker.in_(tickers)
     ).all()
     existing_map = {c.ticker: c for c in existing}
 
-    # Find tickers that need classification
     to_classify = [
         (t, n) for t, n in tickers_with_names if t not in existing_map
     ]
 
     if to_classify:
-        # Build the prompt
-        ticker_list = "\n".join(
-            f"- {ticker} ({name})" for ticker, name in to_classify
-        )
-        prompt = CLASSIFICATION_PROMPT + ticker_list
-
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not api_key or api_key == "sk-your-key-here":
-            # No API key — use fallback classification
-            ai_results = _fallback_classify(to_classify)
-        else:
-            ai_results = _call_openai(prompt, api_key)
-
-        # Save to database
+        # 2) Resolve from builtin map first
+        need_ai = []
         for ticker, name in to_classify:
-            result = ai_results.get(ticker, _default_classification())
-            classification = TickerClassification(
-                ticker=ticker,
-                name=name,
-                region_breakdown=result.get("region", {"US": 100}),
-                category_breakdown=result.get("category", {"Equities": 100}),
-                classified_at=datetime.now(timezone.utc),
-                source="ai" if api_key and api_key != "sk-your-key-here" else "fallback",
-            )
-            db.session.merge(classification)
+            if ticker in BUILTIN_MAP:
+                _save_classification(ticker, name, BUILTIN_MAP[ticker], source="builtin")
+            else:
+                need_ai.append((ticker, name))
+
+        # 3) Call AI for remaining unknowns
+        if need_ai:
+            api_key = os.environ.get("PERPLEXITY_API_KEY", "")
+            has_key = api_key and not api_key.startswith("pplx-your")
+
+            if has_key:
+                ai_results = _call_perplexity(need_ai, api_key)
+            else:
+                ai_results = {}
+
+            for ticker, name in need_ai:
+                raw = ai_results.get(ticker)
+                if raw:
+                    result = _normalize(raw)
+                    _save_classification(ticker, name, result, source="ai")
+                else:
+                    _save_classification(ticker, name, _default_classification(), source="fallback")
 
         db.session.commit()
 
@@ -118,19 +97,78 @@ def classify_tickers(tickers_with_names: list[tuple[str, str]]) -> dict:
     }
 
 
-def _call_openai(prompt: str, api_key: str) -> dict:
-    """Call OpenAI API and parse the response."""
-    client = OpenAI(api_key=api_key)
+def _save_classification(ticker: str, name: str, data: dict, source: str):
+    """Merge a classification into the DB (not yet committed)."""
+    classification = TickerClassification(
+        ticker=ticker,
+        name=name,
+        region_breakdown=data.get("region", {"US": 100}),
+        category_breakdown=data.get("category", {"Other": 100}),
+        classified_at=datetime.now(timezone.utc),
+        source=source,
+    )
+    db.session.merge(classification)
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        response_format={"type": "json_object"},
+
+def _call_perplexity(tickers_with_names: list[tuple[str, str]], api_key: str) -> dict:
+    """Call Perplexity API for unknown tickers. Returns raw parsed JSON."""
+    ticker_list = "\n".join(
+        f"- {ticker} ({name})" for ticker, name in tickers_with_names
+    )
+    prompt = CLASSIFICATION_PROMPT + ticker_list
+
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.perplexity.ai",
     )
 
-    content = response.choices[0].message.content
-    return json.loads(content)
+    try:
+        response = client.chat.completions.create(
+            model="sonar",
+            messages=[
+                {"role": "system", "content": "Return ONLY valid JSON. No markdown, no explanation."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+        )
+
+        content = response.choices[0].message.content
+        # Perplexity may wrap JSON in markdown code blocks
+        if "```" in content:
+            match = re.search(r"```(?:json)?\s*([\s\S]*?)```", content)
+            if match:
+                content = match.group(1).strip()
+        return json.loads(content)
+    except Exception as e:
+        print(f"[classifier] Perplexity API error: {e}")
+        return {}
+
+
+def _normalize(data: dict) -> dict:
+    """Validate and normalize a classification against allowed values."""
+    region = {}
+    for key in VALID_REGIONS:
+        if key in data.get("region", {}):
+            region[key] = data["region"][key]
+    if not region:
+        region = {"US": 100}
+    else:
+        total = sum(region.values())
+        if total > 0 and total != 100:
+            region = {k: round(v * 100 / total) for k, v in region.items()}
+
+    category = {}
+    for key in VALID_CATEGORIES:
+        if key in data.get("category", {}):
+            category[key] = data["category"][key]
+    if not category:
+        category = {"Other": 100}
+    else:
+        total = sum(category.values())
+        if total > 0 and total != 100:
+            category = {k: round(v * 100 / total) for k, v in category.items()}
+
+    return {"region": region, "category": category}
 
 
 def reclassify_ticker(ticker: str, name: str) -> dict:
@@ -141,67 +179,5 @@ def reclassify_ticker(ticker: str, name: str) -> dict:
 
 
 def _default_classification():
-    """Default classification when AI is unavailable."""
-    return {"region": {"US": 100}, "category": {"Equities": 100}}
-
-
-def _fallback_classify(tickers_with_names: list[tuple[str, str]]) -> dict:
-    """
-    Simple rule-based fallback when no OpenAI key is configured.
-    Covers common ETFs; defaults everything else to US Equities.
-    """
-    KNOWN = {
-        # US Total Market
-        "VTI": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "ITOT": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "SPTM": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "VOO": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "SPY": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "IVV": {"region": {"US": 100}, "category": {"Equities": 100}},
-        "QQQ": {"region": {"US": 100}, "category": {"Equities": 100}},
-        # International Developed
-        "VXUS": {"region": {"DM": 78, "EM": 22}, "category": {"Equities": 100}},
-        "VEA": {"region": {"DM": 100}, "category": {"Equities": 100}},
-        "EFA": {"region": {"DM": 100}, "category": {"Equities": 100}},
-        "IEFA": {"region": {"DM": 100}, "category": {"Equities": 100}},
-        "IXUS": {"region": {"DM": 75, "EM": 25}, "category": {"Equities": 100}},
-        # Emerging Markets
-        "VWO": {"region": {"EM": 100}, "category": {"Equities": 100}},
-        "EEM": {"region": {"EM": 100}, "category": {"Equities": 100}},
-        "IEMG": {"region": {"EM": 100}, "category": {"Equities": 100}},
-        # Bonds
-        "BND": {"region": {"US": 100}, "category": {"Fixed Income": 100}},
-        "AGG": {"region": {"US": 100}, "category": {"Fixed Income": 100}},
-        "BNDX": {"region": {"DM": 70, "EM": 30}, "category": {"Fixed Income": 100}},
-        "TLT": {"region": {"US": 100}, "category": {"Fixed Income": 100}},
-        "VGIT": {"region": {"US": 100}, "category": {"Fixed Income": 100}},
-        "TIPS": {"region": {"US": 100}, "category": {"Fixed Income": 100}},
-        # Gold / Metals
-        "GLD": {"region": {"Global": 100}, "category": {"Metals": 100}},
-        "IAU": {"region": {"Global": 100}, "category": {"Metals": 100}},
-        "SLV": {"region": {"Global": 100}, "category": {"Metals": 100}},
-        "GLDM": {"region": {"Global": 100}, "category": {"Metals": 100}},
-        # Commodities
-        "DBC": {"region": {"Global": 100}, "category": {"Commodities": 100}},
-        "GSG": {"region": {"Global": 100}, "category": {"Commodities": 100}},
-        "PDBC": {"region": {"Global": 100}, "category": {"Commodities": 100}},
-        # Real Estate
-        "VNQ": {"region": {"US": 100}, "category": {"Real Estate": 100}},
-        "VNQI": {"region": {"DM": 60, "EM": 40}, "category": {"Real Estate": 100}},
-        "IYR": {"region": {"US": 100}, "category": {"Real Estate": 100}},
-        # Crypto
-        "GBTC": {"region": {"Global": 100}, "category": {"Crypto": 100}},
-        "IBIT": {"region": {"Global": 100}, "category": {"Crypto": 100}},
-        "ETHE": {"region": {"Global": 100}, "category": {"Crypto": 100}},
-        "BITO": {"region": {"Global": 100}, "category": {"Crypto": 100}},
-    }
-
-    results = {}
-    for ticker, name in tickers_with_names:
-        if ticker in KNOWN:
-            results[ticker] = KNOWN[ticker]
-        else:
-            # Default: assume US equity
-            results[ticker] = _default_classification()
-
-    return results
+    """Default classification for unknown tickers."""
+    return {"region": {"US": 100}, "category": {"Other": 100}}
